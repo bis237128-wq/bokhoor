@@ -173,7 +173,7 @@
         </div>
 
         <div class="reviews-section" id="reviewsSection">
-            <h3 class="section-header"><i class="fa-solid fa-comments"></i> آراء العملاء (سكرينات)</h3>
+            <h3 class="section-header"><i class="fa-solid fa-comments"></i> آراء العملاء</h3>
             <div class="reviews-grid" id="reviewsGrid"></div>
         </div>
 
@@ -222,12 +222,12 @@
                 
                 <hr style="border-color:var(--card-border); margin-bottom:20px;">
 
-                <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة سكرين شوت رأي عميل:</h4>
+                <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة صورة رأي عميل:</h4>
                 <div class="form-group" style="margin-bottom:10px;">
-                    <label>اختر صورة السكرين شوت من المعرض:</label>
+                    <label>اختر صورة الرأي من المعرض:</label>
                     <input type="file" id="newRevImgFile" accept="image/*">
                 </div>
-                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة السكرين شوت</button>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة صورة الرأي</button>
                 
                 <button class="submit-btn" style="background:#333; color:#fff; margin-top:20px;" onclick="adminLogout()">تسجيل الخروج</button>
             </div>
@@ -236,13 +236,13 @@
 
     <script>
         function initVisitors() {
-            let visitors = localStorage.getItem('elsheikh_visitor_count');
+            let visitors = localStorage.getItem('elsheikh_visitor_count_v2');
             if (!visitors) {
                 visitors = 1;
             } else {
                 visitors = parseInt(visitors) + 1;
             }
-            localStorage.setItem('elsheikh_visitor_count', visitors);
+            localStorage.setItem('elsheikh_visitor_count_v2', visitors);
             document.getElementById('visitorCount').innerText = visitors;
         }
 
@@ -390,12 +390,12 @@
                     reviews.push({ id: Date.now(), img: e.target.result });
                     localStorage.setItem('elsheikh_revs', JSON.stringify(reviews));
                     renderReviews();
-                    alert('تمت إضافة السكرين شوت بنجاح!');
+                    alert('تمت إضافة صورة الرأي بنجاح!');
                     closeAdminModal();
                 };
                 reader.readAsDataURL(fileInput.files[0]);
             } else {
-                alert('برجاء اختيار صورة السكرين شوت من المعرض أولاً.');
+                alert('برجاء اختيار صورة الرأي من المعرض أولاً.');
             }
         }
 
