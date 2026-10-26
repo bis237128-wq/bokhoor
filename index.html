@@ -151,7 +151,6 @@
         .admin-item-row { display: flex; justify-content: space-between; align-items: center; background: #0a0805; padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--card-border); }
         .admin-item-title { font-size: 14px; color: #fff; }
         .admin-del-btn { background: var(--danger-red); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
-        .loading-text { text-align: center; color: var(--primary-gold); font-size: 14px; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -190,7 +189,7 @@
     <div class="main-container">
         <div id="productsSection">
             <h3 class="section-header"><i class="fa-solid fa-box-open"></i> المنتجات المتوفرة</h3>
-            <div class="products-grid" id="productsGrid"><div class="loading-text">جاري تحميل المنتجات...</div></div>
+            <div class="products-grid" id="productsGrid"></div>
         </div>
 
         <div class="reviews-section" id="reviewsSection">
@@ -230,14 +229,14 @@
             </div>
 
             <div id="adminControls" style="display:none;">
-                <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم (حفظ دائم ومباشر)</h3>
+                <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم (حفظ محلي فوري وآمن)</h3>
                 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:8px;">إضافة منتج رئيسي جديد:</h4>
                 <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newProdName" placeholder="اسم المنتج الرئيسي"></div>
                 <div class="form-group" style="margin-bottom:10px;"><input type="number" id="newProdPrice" placeholder="السعر بـ ج.م"></div>
                 <div class="form-group" style="margin-bottom:15px;"><label>رابط صورة المنتج (URL مباشر):</label><input type="url" id="newProdImgUrl" placeholder="https://..."></div>
 
-                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewProduct()">إضافة المنتج الرئيسي وحفظه</button>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewProduct()">إضافة وحفظ المنتج الرئيسي</button>
                 
                 <hr style="border-color:var(--card-border); margin-bottom:20px;">
 
@@ -261,7 +260,7 @@
 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة صورة رأي عميل:</h4>
                 <div class="form-group" style="margin-bottom:15px;"><input type="url" id="newRevImgUrl" placeholder="رابط صورة الرأي URL مباشر"></div>
-                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة صورة الرأي وحفظها</button>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة وحفظ صورة الرأي</button>
                 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إدارة وحذف آراء العملاء:</h4>
                 <div id="adminReviewList" style="margin-bottom:20px; max-height:150px; overflow-y:auto;"></div>
@@ -278,9 +277,6 @@
     </div>
 
     <script>
-        const CLOUD_BIN_ID = "66f44605e41b4d34e437b01d";
-        const API_URL = `https://api.jsonbin.io/v3/b/${CLOUD_BIN_ID}`;
-
         const defaultProducts = [
             { 
                 id: 1, 
@@ -304,71 +300,20 @@
             }
         ];
 
-        let products = [];
-        let reviews = [];
+        let products = JSON.parse(localStorage.getItem('elsheikh_products_v9')) || defaultProducts;
+        let reviews = JSON.parse(localStorage.getItem('elsheikh_reviews_v9')) || [];
         let quantities = {};
         let selectedVariantIndexes = {};
 
-        // تحميل البيانات بدمج التخزين المحلي والسحابي لضمان عدم ضياع أي منتج
-        async function loadData() {
-            // 1. التحقق أولاً من التخزين المحلي للمتصفح (لتجنب مسح المنتجات المضافة محلياً)
-            let localProducts = localStorage.getItem('elsheikh_products');
-            let localReviews = localStorage.getItem('elsheikh_reviews');
-
-            if (localProducts) {
-                products = JSON.parse(localProducts);
-            } else {
-                products = [...defaultProducts];
-            }
-
-            if (localReviews) {
-                reviews = JSON.parse(localReviews);
-            }
-
-            // 2. محاولة التحديث من السحابة في الخلفية
-            try {
-                let res = await fetch(API_URL + '/latest', {
-                    headers: { 'X-Master-Key': '$2a$10$wT0l0sZ9K/.0s3V2rE6eE.y1L5oKq1H0c8.m9v5Z0J2f2K1' }
-                });
-                if(res.ok) {
-                    let data = await res.json();
-                    if(data.record && data.record.products && data.record.products.length > 0) {
-                        // إذا كانت السحابة تحتوي على منتجات جديدة، نعتمدها ونحدث التخزين المحلي
-                        products = data.record.products;
-                        if(data.record.reviews) reviews = data.record.reviews;
-                        saveLocal();
-                    }
-                }
-            } catch(e) { console.log("Using local cache"); }
-
-            renderProducts();
-            renderReviews();
-        }
-
-        // حفظ البيانات محلياً وفي السحابة معاً لضمان عدم اختفائها نهائياً
-        async function saveData() {
-            saveLocal();
-            try {
-                await fetch(API_URL, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': '$2a$10$wT0l0sZ9K/.0s3V2rE6eE.y1L5oKq1H0c8.m9v5Z0J2f2K1'
-                    },
-                    body: JSON.stringify({ products: products, reviews: reviews })
-                });
-            } catch(e) { console.log("Cloud sync pending"); }
-        }
-
-        function saveLocal() {
-            localStorage.setItem('elsheikh_products', JSON.stringify(products));
-            localStorage.setItem('elsheikh_reviews', JSON.stringify(reviews));
+        function saveToLocal() {
+            localStorage.setItem('elsheikh_products_v9', JSON.stringify(products));
+            localStorage.setItem('elsheikh_reviews_v9', JSON.stringify(reviews));
         }
 
         function initVisitors() {
-            let visitors = localStorage.getItem('elsheikh_visitor_count_v8');
+            let visitors = localStorage.getItem('elsheikh_visitor_count_v9');
             if (!visitors) { visitors = 1; } else { visitors = parseInt(visitors) + 1; }
-            localStorage.setItem('elsheikh_visitor_count_v8', visitors);
+            localStorage.setItem('elsheikh_visitor_count_v9', visitors);
             document.getElementById('visitorCount').innerText = visitors;
         }
 
@@ -465,18 +410,18 @@
             });
         }
 
-        async function deleteProduct(id) {
+        function deleteProduct(id) {
             products = products.filter(p => p.id !== id);
+            saveToLocal();
             renderProducts();
             renderAdminLists();
-            await saveData();
         }
 
-        async function deleteReview(id) {
+        function deleteReview(id) {
             reviews = reviews.filter(r => r.id !== id);
+            saveToLocal();
             renderReviews();
             renderAdminLists();
-            await saveData();
         }
 
         function updateQty(id, delta) {
@@ -534,7 +479,7 @@
             closeAdminModal();
         }
 
-        async function addNewProduct() {
+        function addNewProduct() {
             const name = document.getElementById('newProdName').value.trim();
             const price = parseFloat(document.getElementById('newProdPrice').value);
             const urlInput = document.getElementById('newProdImgUrl').value.trim();
@@ -556,17 +501,17 @@
                 ]
             });
 
+            saveToLocal();
             renderProducts();
             renderAdminLists();
-            await saveData();
 
-            alert('تم حفظ وإضافة المنتج بنجاح ولن يختفي بعد الآن!');
+            alert('تم حفظ المنتج بنجاح ولن يختفي أبداً بعد الـ Refresh!');
             document.getElementById('newProdName').value = '';
             document.getElementById('newProdPrice').value = '';
             document.getElementById('newProdImgUrl').value = '';
         }
 
-        async function addNewVariantToProduct() {
+        function addNewVariantToProduct() {
             const prodId = parseInt(document.getElementById('targetProductSelect').value);
             const varName = document.getElementById('newVariantName').value.trim();
             const varDesc = document.getElementById('newVariantDesc').value.trim() || "بخور أصيل عالي الجودة.";
@@ -584,25 +529,25 @@
                 if(!p.variants) p.variants = [];
                 p.variants.push({ name: varName, img: defaultImg, desc: varDesc });
                 
+                saveToLocal();
                 renderProducts();
                 renderAdminLists();
-                await saveData();
 
-                alert('تم حفظ وإضافة النكهة بنجاح ولن تختفي بعد التحديث!');
+                alert('تم حفظ وإضافة النكهة بنجاح ولن تختفي أبداً!');
                 document.getElementById('newVariantName').value = '';
                 document.getElementById('newVariantDesc').value = '';
                 document.getElementById('newVariantImgUrl').value = '';
             }
         }
 
-        async function addNewReview() {
+        function addNewReview() {
             const urlInput = document.getElementById('newRevImgUrl').value.trim();
             if(urlInput !== '') {
                 reviews.push({ id: Date.now(), img: urlInput });
+                saveToLocal();
                 renderReviews();
                 renderAdminLists();
-                await saveData();
-                alert('تمت إضافة وحفظ صورة الرأي بنجاح!');
+                alert('تم حفظ صورة الرأي بنجاح!');
                 document.getElementById('newRevImgUrl').value = '';
             } else {
                 alert('برجاء إضافة رابط صورة الرأي (URL) أولاً.');
@@ -623,7 +568,8 @@
         function scrollToSection(id) { document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
 
         initVisitors();
-        loadData();
+        renderProducts();
+        renderReviews();
     </script>
 </body>
 </html>
