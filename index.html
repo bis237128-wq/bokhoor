@@ -123,7 +123,6 @@
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .form-group label { display: block; font-size: 12px; color: var(--primary-gold); margin-bottom: 6px; }
         .form-group input, .form-group select { width: 100%; padding: 12px; background: #0a0805; border: 1px solid var(--card-border); border-radius: 8px; color: #fff; outline: none; }
-        .form-group input[type="file"] { padding: 8px; cursor: pointer; color: var(--primary-gold); }
 
         .order-summary { display: flex; justify-content: space-between; align-items: center; background: #0a0805; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; border: 1px dashed var(--card-border); }
         
@@ -143,7 +142,7 @@
         .admin-item-row { display: flex; justify-content: space-between; align-items: center; background: #0a0805; padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--card-border); }
         .admin-item-title { font-size: 14px; color: #fff; }
         .admin-del-btn { background: var(--danger-red); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
-        .or-divider { text-align: center; color: var(--text-muted); font-size: 11px; margin: 5px 0; }
+        .loading-text { text-align: center; color: var(--primary-gold); font-size: 14px; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -182,7 +181,7 @@
     <div class="main-container">
         <div id="productsSection">
             <h3 class="section-header"><i class="fa-solid fa-box-open"></i> المنتجات المتوفرة</h3>
-            <div class="products-grid" id="productsGrid"></div>
+            <div class="products-grid" id="productsGrid"><div class="loading-text">جاري تحميل المنتجات...</div></div>
         </div>
 
         <div class="reviews-section" id="reviewsSection">
@@ -222,46 +221,27 @@
             </div>
 
             <div id="adminControls" style="display:none;">
-                <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم الشاملة</h3>
+                <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم الشاملة (تزامن سحابي حي)</h3>
                 
-                <!-- إضافة منتج رئيسي جديد مع خيارات الصورة -->
                 <h4 style="color:#fff; font-size:13px; margin-bottom:8px;">إضافة منتج رئيسي جديد:</h4>
-                <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newProdName" placeholder="اسم المنتج الرئيسي (مثل: ارابيسك 5 ساعات)"></div>
+                <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newProdName" placeholder="اسم المنتج الرئيسي (مثل: انسام 5 ساعات)"></div>
                 <div class="form-group" style="margin-bottom:10px;"><input type="number" id="newProdPrice" placeholder="السعر بـ ج.م"></div>
-                
-                <div class="form-group" style="margin-bottom:5px;">
-                    <label>صورة المنتج الأساسية (من المعرض):</label>
-                    <input type="file" id="newProdImgFile" accept="image/*">
-                </div>
-                <div class="or-divider">- أو -</div>
-                <div class="form-group" style="margin-bottom:15px;">
-                    <label>رابط صورة المنتج الأساسية (URL):</label>
-                    <input type="url" id="newProdImgUrl" placeholder="https://example.com/product.jpg">
-                </div>
+                <div class="form-group" style="margin-bottom:15px;"><label>رابط صورة المنتج الأساسية (URL):</label><input type="url" id="newProdImgUrl" placeholder="https://example.com/image.jpg"></div>
 
-                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewProduct()">إضافة المنتج الرئيسي</button>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewProduct()">إضافة المنتج الرئيسي السحابي</button>
                 
                 <hr style="border-color:var(--card-border); margin-bottom:20px;">
 
-                <!-- إضافة نكهة أو نوع لمنتج موجود -->
                 <h4 style="color:#fff; font-size:13px; margin-bottom:8px;">إضافة نوع أو نكهة جديدة لمنتج:</h4>
                 <div class="form-group" style="margin-bottom:10px;">
                     <label>اختر المنتج المستهدف:</label>
                     <select id="targetProductSelect"></select>
                 </div>
-                <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newVariantName" placeholder="اسم النوع أو النكهة (مثل: روح المسك 5 ساعات)"></div>
+                <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newVariantName" placeholder="اسم النوع أو النكهة (مثل: روح المسك)"></div>
                 <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newVariantDesc" placeholder="وصف أو تفاصيل النوع"></div>
-                
-                <div class="form-group" style="margin-bottom:5px;">
-                    <label>صورة النوع (من المعرض):</label>
-                    <input type="file" id="newVariantImgFile" accept="image/*">
-                </div>
-                <div class="or-divider">- أو -</div>
-                <div class="form-group" style="margin-bottom:15px;">
-                    <label>رابط صورة النوع (URL):</label>
-                    <input type="url" id="newVariantImgUrl" placeholder="https://example.com/musk.jpg">
-                </div>
-                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewVariantToProduct()">إضافة النوع للمنتج</button>
+                <div class="form-group" style="margin-bottom:15px;"><label>رابط صورة النوع (URL):</label><input type="url" id="newVariantImgUrl" placeholder="https://example.com/musk.jpg"></div>
+
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewVariantToProduct()">إضافة النوع للمنتج السحابي</button>
 
                 <hr style="border-color:var(--card-border); margin-bottom:20px;">
 
@@ -271,10 +251,8 @@
                 <hr style="border-color:var(--card-border); margin-bottom:20px;">
 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة صورة رأي عميل:</h4>
-                <div class="form-group" style="margin-bottom:5px;"><input type="file" id="newRevImgFile" accept="image/*"></div>
-                <div class="or-divider">- أو -</div>
                 <div class="form-group" style="margin-bottom:15px;"><input type="url" id="newRevImgUrl" placeholder="رابط صورة الرأي URL"></div>
-                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة صورة الرأي</button>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة صورة الرأي السحابية</button>
                 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إدارة وحذف آراء العملاء:</h4>
                 <div id="adminReviewList" style="margin-bottom:20px; max-height:150px; overflow-y:auto;"></div>
@@ -285,35 +263,73 @@
     </div>
 
     <script>
-        function initVisitors() {
-            let visitors = localStorage.getItem('elsheikh_visitor_count_v3');
-            if (!visitors) {
-                visitors = 1;
-            } else {
-                visitors = parseInt(visitors) + 1;
-            }
-            localStorage.setItem('elsheikh_visitor_count_v3', visitors);
-            document.getElementById('visitorCount').innerText = visitors;
-        }
+        const CLOUD_BIN_ID = "66f44605e41b4d34e437b01d";
+        const API_URL = `https://api.jsonbin.io/v3/b/${CLOUD_BIN_ID}`;
 
         const defaultProducts = [
             { 
                 id: 1, 
-                title: "ارابيسك 5 ساعات", 
-                price: 75, 
+                title: "انسام 5 ساعات", 
+                price: 80, 
                 badge: "الأكثر مبيعاً", 
                 variants: [
-                    { name: "أعواد جالكسي (Galaxy Sticks)", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "تعطير يدوم حتى 5 ساعات كاملة بتركيز وثبات عالي جداً وقوة رائحة نفاذة." },
-                    { name: "أرابيسك كلاسيك الفاخر", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "خلطة شرقية أصلية من أفضل خشب العود المعطر." },
-                    { name: "روح المسك الملكي", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "رائحة النظافة والانتعاش بالمسك الصافي الهادئ." }
+                    { name: "روح المسك", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "بخور أنسام روح المسك، تجربة عطرية تجمع بين الانتعاش والنعومة، مع لمحات زهرية منعشة." },
+                    { name: "أرابيسك كلاسيك", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "خلطة شرقية أصلية تدوم طويلاً بثبات وعطر فواح." }
+                ]
+            },
+            { 
+                id: 2, 
+                title: "تيجان", 
+                price: 65, 
+                badge: "مميز", 
+                variants: [
+                    { name: "اضواء باريس", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "عطر فريد يجعلك تشعر وكأنك تتجول في شوارع باريس العامرة بالأضواء والروائح الخلابة." },
+                    { name: "نفائس العود", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "عبير العود الملكي الأصيل للمجالس الفاخرة." }
                 ]
             }
         ];
 
-        let products = JSON.parse(localStorage.getItem('elsheikh_prods_v3')) || defaultProducts;
-        let reviews = JSON.parse(localStorage.getItem('elsheikh_revs_v3')) || [];
+        let products = [...defaultProducts];
+        let reviews = [];
         let quantities = {};
         let selectedVariantIndexes = {};
+
+        async function loadCloudData() {
+            try {
+                let res = await fetch(API_URL + '/latest', {
+                    headers: { 'X-Master-Key': '$2a$10$wT0l0sZ9K/.0s3V2rE6eE.y1L5oKq1H0c8.m9v5Z0J2f2K1' }
+                });
+                if(res.ok) {
+                    let data = await res.json();
+                    if(data.record) {
+                        if(data.record.products && data.record.products.length > 0) products = data.record.products;
+                        if(data.record.reviews) reviews = data.record.reviews;
+                    }
+                }
+            } catch(e) { console.log("Cloud load fallback to default"); }
+            renderProducts();
+            renderReviews();
+        }
+
+        async function saveCloudData() {
+            try {
+                await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': '$2a$10$wT0l0sZ9K/.0s3V2rE6eE.y1L5oKq1H0c8.m9v5Z0J2f2K1'
+                    },
+                    body: JSON.stringify({ products: products, reviews: reviews })
+                });
+            } catch(e) { console.log("Cloud save error"); }
+        }
+
+        function initVisitors() {
+            let visitors = localStorage.getItem('elsheikh_visitor_count_v5');
+            if (!visitors) { visitors = 1; } else { visitors = parseInt(visitors) + 1; }
+            localStorage.setItem('elsheikh_visitor_count_v5', visitors);
+            document.getElementById('visitorCount').innerText = visitors;
+        }
 
         function renderProducts() {
             const grid = document.getElementById('productsGrid');
@@ -406,18 +422,18 @@
             });
         }
 
-        function deleteProduct(id) {
+        async function deleteProduct(id) {
             products = products.filter(p => p.id !== id);
-            localStorage.setItem('elsheikh_prods_v3', JSON.stringify(products));
             renderProducts();
             renderAdminLists();
+            await saveCloudData();
         }
 
-        function deleteReview(id) {
+        async function deleteReview(id) {
             reviews = reviews.filter(r => r.id !== id);
-            localStorage.setItem('elsheikh_revs_v3', JSON.stringify(reviews));
             renderReviews();
             renderAdminLists();
+            await saveCloudData();
         }
 
         function updateQty(id, delta) {
@@ -475,10 +491,9 @@
             closeAdminModal();
         }
 
-        function addNewProduct() {
+        async function addNewProduct() {
             const name = document.getElementById('newProdName').value.trim();
             const price = parseFloat(document.getElementById('newProdPrice').value);
-            const fileInput = document.getElementById('newProdImgFile');
             const urlInput = document.getElementById('newProdImgUrl').value.trim();
 
             if(!name || isNaN(price)) {
@@ -486,44 +501,32 @@
                 return;
             }
 
-            const defaultImg = "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
+            const defaultImg = urlInput !== '' ? urlInput : "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
 
-            let createProd = (imgUrl) => {
-                products.push({
-                    id: Date.now(),
-                    title: name,
-                    price: price,
-                    badge: "جديد",
-                    variants: [
-                        { name: "النوع الأساسي", img: imgUrl, desc: "بخور فاخر ومميز." }
-                    ]
-                });
-                localStorage.setItem('elsheikh_prods_v3', JSON.stringify(products));
-                renderProducts();
-                renderAdminLists();
-                alert('تمت إضافة المنتج الرئيسي بنجاح!');
-                document.getElementById('newProdName').value = '';
-                document.getElementById('newProdPrice').value = '';
-                document.getElementById('newProdImgUrl').value = '';
-                fileInput.value = '';
-            };
+            products.push({
+                id: Date.now(),
+                title: name,
+                price: price,
+                badge: "جديد",
+                variants: [
+                    { name: "النوع الأساسي", img: defaultImg, desc: "بخور فاخر ومميز." }
+                ]
+            });
 
-            if(fileInput.files && fileInput.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) { createProd(e.target.result); };
-                reader.readAsDataURL(fileInput.files[0]);
-            } else if(urlInput !== '') {
-                createProd(urlInput);
-            } else {
-                createProd(defaultImg);
-            }
+            renderProducts();
+            renderAdminLists();
+            await saveCloudData();
+
+            alert('تمت إضافة المنتج بنجاح ومزامنته سحابياً مع كافة الهواتف!');
+            document.getElementById('newProdName').value = '';
+            document.getElementById('newProdPrice').value = '';
+            document.getElementById('newProdImgUrl').value = '';
         }
 
-        function addNewVariantToProduct() {
+        async function addNewVariantToProduct() {
             const prodId = parseInt(document.getElementById('targetProductSelect').value);
             const varName = document.getElementById('newVariantName').value.trim();
             const varDesc = document.getElementById('newVariantDesc').value.trim() || "بخور أصيل عالي الجودة.";
-            const fileInput = document.getElementById('newVariantImgFile');
             const urlInput = document.getElementById('newVariantImgUrl').value.trim();
 
             if(!varName) {
@@ -531,65 +534,42 @@
                 return;
             }
 
-            const defaultImg = "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
+            const defaultImg = urlInput !== '' ? urlInput : "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
 
-            let saveVariant = (imgUrl) => {
-                let p = products.find(item => item.id === prodId);
-                if(p) {
-                    if(!p.variants) p.variants = [];
-                    p.variants.push({ name: varName, img: imgUrl, desc: varDesc });
-                    localStorage.setItem('elsheikh_prods_v3', JSON.stringify(products));
-                    renderProducts();
-                    renderAdminLists();
-                    alert('تمت إضافة النكهة أو النوع الجديد بنجاح!');
-                    document.getElementById('newVariantName').value = '';
-                    document.getElementById('newVariantDesc').value = '';
-                    document.getElementById('newVariantImgUrl').value = '';
-                    fileInput.value = '';
-                }
-            };
+            let p = products.find(item => item.id === prodId);
+            if(p) {
+                if(!p.variants) p.variants = [];
+                p.variants.push({ name: varName, img: defaultImg, desc: varDesc });
+                
+                renderProducts();
+                renderAdminLists();
+                await saveCloudData();
 
-            if(fileInput.files && fileInput.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) { saveVariant(e.target.result); };
-                reader.readAsDataURL(fileInput.files[0]);
-            } else if(urlInput !== '') {
-                saveVariant(urlInput);
-            } else {
-                saveVariant(defaultImg);
+                alert('تمت إضافة النكهة أو النوع بنجاح ومزامنته مع باقي الأجهزة!');
+                document.getElementById('newVariantName').value = '';
+                document.getElementById('newVariantDesc').value = '';
+                document.getElementById('newVariantImgUrl').value = '';
             }
         }
 
-        function addNewReview() {
-            const fileInput = document.getElementById('newRevImgFile');
+        async function addNewReview() {
             const urlInput = document.getElementById('newRevImgUrl').value.trim();
-
-            let addRev = (imgUrl) => {
-                reviews.push({ id: Date.now(), img: imgUrl });
-                localStorage.setItem('elsheikh_revs_v3', JSON.stringify(reviews));
+            if(urlInput !== '') {
+                reviews.push({ id: Date.now(), img: urlInput });
                 renderReviews();
                 renderAdminLists();
-                alert('تمت إضافة صورة الرأي بنجاح!');
-                fileInput.value = '';
+                await saveCloudData();
+                alert('تمت إضافة صورة الرأي بنجاح ومزامنتها سحابياً!');
                 document.getElementById('newRevImgUrl').value = '';
-            };
-
-            if(fileInput.files && fileInput.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) { addRev(e.target.result); };
-                reader.readAsDataURL(fileInput.files[0]);
-            } else if(urlInput !== '') {
-                addRev(urlInput);
             } else {
-                alert('برجاء اختيار صورة من المعرض أو إضافة رابط الصورة أولاً.');
+                alert('برجاء إضافة رابط صورة الرأي (URL) أولاً.');
             }
         }
 
         function scrollToSection(id) { document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
 
         initVisitors();
-        renderProducts();
-        renderReviews();
+        loadCloudData();
     </script>
 </body>
 </html>
