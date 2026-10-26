@@ -15,6 +15,7 @@
             --text-white: #ffffff;
             --text-muted: #a1998e;
             --whatsapp-green: #25D366;
+            --danger-red: #ff4d4d;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
@@ -108,7 +109,7 @@
 
         .reviews-section { margin-bottom: 60px; }
         .reviews-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .review-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden; }
+        .review-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden; position: relative; }
         .review-card img { width: 100%; height: 280px; object-fit: cover; display: block; }
 
         .order-box { background: var(--card-bg); border: 1px solid var(--primary-gold); border-radius: 16px; padding: 30px; margin-bottom: 40px; }
@@ -129,8 +130,12 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 20px;
         }
-        .modal-card { background: var(--card-bg); border: 1px solid var(--primary-gold); border-radius: 16px; width: 100%; max-width: 500px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-card { background: var(--card-bg); border: 1px solid var(--primary-gold); border-radius: 16px; width: 100%; max-width: 550px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
         .close-btn { position: absolute; top: 15px; left: 15px; color: var(--text-muted); cursor: pointer; font-size: 20px; }
+
+        .admin-item-row { display: flex; justify-content: space-between; align-items: center; background: #0a0805; padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--card-border); }
+        .admin-item-title { font-size: 14px; color: #fff; }
+        .admin-del-btn { background: var(--danger-red); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -209,17 +214,22 @@
             </div>
 
             <div id="adminControls" style="display:none;">
-                <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم والرفع</h3>
+                <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم الشاملة</h3>
                 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة منتج جديد:</h4>
                 <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newProdName" placeholder="اسم المنتج"></div>
                 <div class="form-group" style="margin-bottom:10px;"><input type="number" id="newProdPrice" placeholder="السعر بـ ج.م"></div>
                 <div class="form-group" style="margin-bottom:10px;">
-                    <label>اختر صورة المنتج من المعرض:</label>
+                    <label>اختر صورة المنتج (اختياري - ستوضع صورة افتراضية إن لم تختار):</label>
                     <input type="file" id="newProdImgFile" accept="image/*">
                 </div>
                 <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewProduct()">إضافة المنتج</button>
                 
+                <hr style="border-color:var(--card-border); margin-bottom:20px;">
+
+                <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إدارة وحذف المنتجات الحالية:</h4>
+                <div id="adminProductList" style="margin-bottom:20px; max-height:150px; overflow-y:auto;"></div>
+
                 <hr style="border-color:var(--card-border); margin-bottom:20px;">
 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة صورة رأي عميل:</h4>
@@ -229,7 +239,10 @@
                 </div>
                 <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة صورة الرأي</button>
                 
-                <button class="submit-btn" style="background:#333; color:#fff; margin-top:20px;" onclick="adminLogout()">تسجيل الخروج</button>
+                <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إدارة وحذف آراء العملاء:</h4>
+                <div id="adminReviewList" style="margin-bottom:20px; max-height:150px; overflow-y:auto;"></div>
+
+                <button class="submit-btn" style="background:#333; color:#fff; margin-top:10px;" onclick="adminLogout()">تسجيل الخروج</button>
             </div>
         </div>
     </div>
@@ -299,6 +312,44 @@
             });
         }
 
+        function renderAdminLists() {
+            const prodList = document.getElementById('adminProductList');
+            prodList.innerHTML = '';
+            products.forEach(p => {
+                prodList.innerHTML += `
+                    <div class="admin-item-row">
+                        <span class="admin-item-title">${p.title} (${p.price} ج.م)</span>
+                        <button class="admin-del-btn" onclick="deleteProduct(${p.id})">حذف</button>
+                    </div>
+                `;
+            });
+
+            const revList = document.getElementById('adminReviewList');
+            revList.innerHTML = '';
+            reviews.forEach((r, index) => {
+                revList.innerHTML += `
+                    <div class="admin-item-row">
+                        <span class="admin-item-title">صورة رأي عميل #${index + 1}</span>
+                        <button class="admin-del-btn" onclick="deleteReview(${r.id})">حذف</button>
+                    </div>
+                `;
+            });
+        }
+
+        function deleteProduct(id) {
+            products = products.filter(p => p.id !== id);
+            localStorage.setItem('elsheikh_prods', JSON.stringify(products));
+            renderProducts();
+            renderAdminLists();
+        }
+
+        function deleteReview(id) {
+            reviews = reviews.filter(r => r.id !== id);
+            localStorage.setItem('elsheikh_revs', JSON.stringify(reviews));
+            renderReviews();
+            renderAdminLists();
+        }
+
         function updateQty(id, delta) {
             quantities[id] = Math.max(0, (quantities[id] || 0) + delta);
             document.getElementById(`qty-${id}`).innerText = quantities[id];
@@ -332,7 +383,7 @@
             window.open(`https://wa.me/201278771472?text=${encodeURIComponent(text)}`, '_blank');
         }
 
-        function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; }
+        function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; renderAdminLists(); }
         function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
 
         function adminLogin() {
@@ -340,6 +391,7 @@
             if(p === '1234') {
                 document.getElementById('adminLoginForm').style.display = 'none';
                 document.getElementById('adminControls').style.display = 'block';
+                renderAdminLists();
             } else { 
                 alert('كلمة المرور غير صحيحة!'); 
             }
@@ -362,22 +414,29 @@
                 return;
             }
 
+            const defaultImg = "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
+
             if(fileInput.files && fileInput.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     products.push({ id: Date.now(), title: name, price: price, img: e.target.result, scents: ["عامة"] });
                     localStorage.setItem('elsheikh_prods', JSON.stringify(products));
                     renderProducts();
+                    renderAdminLists();
                     alert('تمت إضافة المنتج بنجاح!');
-                    closeAdminModal();
+                    document.getElementById('newProdName').value = '';
+                    document.getElementById('newProdPrice').value = '';
+                    fileInput.value = '';
                 };
                 reader.readAsDataURL(fileInput.files[0]);
             } else {
-                products.push({ id: Date.now(), title: name, price: price, img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["عامة"] });
+                products.push({ id: Date.now(), title: name, price: price, img: defaultImg, scents: ["عامة"] });
                 localStorage.setItem('elsheikh_prods', JSON.stringify(products));
                 renderProducts();
-                alert('تمت إضافة المنتج بنجاح!');
-                closeAdminModal();
+                renderAdminLists();
+                alert('تمت إضافة المنتج بنجاح بصورة افتراضية!');
+                document.getElementById('newProdName').value = '';
+                document.getElementById('newProdPrice').value = '';
             }
         }
 
@@ -390,8 +449,9 @@
                     reviews.push({ id: Date.now(), img: e.target.result });
                     localStorage.setItem('elsheikh_revs', JSON.stringify(reviews));
                     renderReviews();
+                    renderAdminLists();
                     alert('تمت إضافة صورة الرأي بنجاح!');
-                    closeAdminModal();
+                    fileInput.value = '';
                 };
                 reader.readAsDataURL(fileInput.files[0]);
             } else {
