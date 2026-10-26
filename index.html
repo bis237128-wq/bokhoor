@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تشكيلة بخور الشيخ والأنواع الفاخرة</title>
+    <title>بخور الشيخ | بخور أرابيسك أعواد تدوم ٥ ساعات</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -71,9 +71,18 @@
         .visitor-info span { font-size: 10px; color: var(--text-muted); display: block; }
         .visitor-info strong { font-size: 14px; color: var(--primary-gold); }
 
-        .hero-section { text-align: center; padding: 60px 20px 40px; }
-        .hero-title { font-size: 44px; font-weight: 900; color: var(--primary-gold); margin-bottom: 12px; }
-        .hero-subtitle { font-size: 17px; color: var(--text-muted); max-width: 650px; margin: 0 auto; }
+        .hero-section { text-align: center; padding: 70px 20px 50px; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            border: 1px solid var(--card-border); padding: 8px 22px; border-radius: 30px;
+            font-size: 14px; color: var(--text-muted); margin-bottom: 25px;
+            background: rgba(201, 168, 76, 0.03);
+        }
+        .hero-title {
+            font-size: 46px; font-weight: 900; color: var(--primary-gold);
+            margin-bottom: 15px; line-height: 1.3;
+        }
+        .hero-subtitle { font-size: 16px; color: var(--text-muted); max-width: 650px; margin: 0 auto; }
 
         .main-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
         .section-header { font-size: 24px; font-weight: 800; color: var(--primary-gold); margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
@@ -100,20 +109,13 @@
         .reviews-section { margin-bottom: 60px; }
         .reviews-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
         .review-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden; }
-        .review-card img { width: 100%; height: 260px; object-fit: cover; display: block; }
-        .review-title { padding: 10px; text-align: center; font-size: 13px; color: var(--primary-gold); background: #0a0805; border-top: 1px solid var(--card-border); }
+        .review-card img { width: 100%; height: 280px; object-fit: cover; display: block; }
 
         .order-box { background: var(--card-bg); border: 1px solid var(--primary-gold); border-radius: 16px; padding: 30px; margin-bottom: 40px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .form-group label { display: block; font-size: 12px; color: var(--primary-gold); margin-bottom: 6px; }
         .form-group input { width: 100%; padding: 12px; background: #0a0805; border: 1px solid var(--card-border); border-radius: 8px; color: #fff; outline: none; }
-        
-        .form-group input[type="file"] {
-            padding: 8px;
-            cursor: pointer;
-            color: var(--primary-gold);
-            background: #0a0805;
-        }
+        .form-group input[type="file"] { padding: 8px; cursor: pointer; color: var(--primary-gold); }
 
         .order-summary { display: flex; justify-content: space-between; align-items: center; background: #0a0805; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; border: 1px dashed var(--card-border); }
         
@@ -156,10 +158,12 @@
         </div>
     </div>
 
-    <!-- Hero Banner with requested title -->
     <section class="hero-section">
-        <h2 class="hero-title">تشكيلة بخور الشيخ والأنواع الفاخرة</h2>
-        <p class="hero-subtitle">اختر العبوة والرائحة المفضلة لديك وسنصلك فوراً عبر خدمة الطلب المباشر</p>
+        <div class="hero-badge">
+            <i class="fa-solid fa-sparkles" style="color:var(--primary-gold)"></i> صناعة عربية أصيلة منذ الأزل
+        </div>
+        <h2 class="hero-title">بخور أرابيسك<br>أعواد تدوم ٥ ساعات</h2>
+        <p class="hero-subtitle">منتجات مختارة بعناية تصلك حتى باب بيتك. أجود أنواع العود والمسك والعنبر</p>
     </section>
 
     <div class="main-container">
@@ -190,26 +194,28 @@
         </div>
     </div>
 
-    <!-- Admin Panel Modal (Protected) -->
+    <!-- Admin Panel Modal (Simplified) -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-card">
             <i class="fa-solid fa-xmark close-btn" onclick="closeAdminModal()"></i>
             
             <div id="adminLoginForm">
                 <h3 style="color:var(--primary-gold); margin-bottom:15px; text-align:center;">دخول لوحة تحكم المالك</h3>
-                <div class="form-group" style="margin-bottom:12px;"><label>اسم المستخدم</label><input type="text" id="adminUser" placeholder="muslim"></div>
-                <div class="form-group" style="margin-bottom:20px;"><label>كلمة المرور</label><input type="password" id="adminPass" placeholder="••••••••"></div>
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="adminPass" placeholder="أدخل كلمة المرور">
+                </div>
                 <button class="submit-btn" style="background:var(--primary-gold); color:#000;" onclick="adminLogin()">دخول</button>
             </div>
 
             <div id="adminControls" style="display:none;">
-                <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم والرفع (محمية)</h3>
+                <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم والرفع</h3>
                 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة منتج جديد:</h4>
                 <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newProdName" placeholder="اسم المنتج"></div>
                 <div class="form-group" style="margin-bottom:10px;"><input type="number" id="newProdPrice" placeholder="السعر بـ ج.م"></div>
                 <div class="form-group" style="margin-bottom:10px;">
-                    <label>اختر صورة المنتج من معرض الجهاز:</label>
+                    <label>اختر صورة المنتج من المعرض:</label>
                     <input type="file" id="newProdImgFile" accept="image/*">
                 </div>
                 <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewProduct()">إضافة المنتج</button>
@@ -217,9 +223,8 @@
                 <hr style="border-color:var(--card-border); margin-bottom:20px;">
 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة سكرين شوت رأي عميل:</h4>
-                <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newRevTitle" placeholder="اسم العميل أو الوصف"></div>
                 <div class="form-group" style="margin-bottom:10px;">
-                    <label>اختر صورة السكرين شوت من معرض الجهاز:</label>
+                    <label>اختر صورة السكرين شوت من المعرض:</label>
                     <input type="file" id="newRevImgFile" accept="image/*">
                 </div>
                 <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة السكرين شوت</button>
@@ -243,13 +248,8 @@
             { id: 3, title: "البخور القمع الهرمي", price: 70, badge: "فاخر", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["أقماع هرمية", "نفائس العنبر"] }
         ];
 
-        const defaultReviews = [
-            { id: 1, title: "رأي أبو عبد الله", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg" },
-            { id: 2, title: "رأي أم سارة", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg" }
-        ];
-
         let products = JSON.parse(localStorage.getItem('elsheikh_prods')) || defaultProducts;
-        let reviews = JSON.parse(localStorage.getItem('elsheikh_revs')) || defaultReviews;
+        let reviews = JSON.parse(localStorage.getItem('elsheikh_revs')) || [];
         let quantities = {};
         let selectedScents = {};
 
@@ -290,7 +290,6 @@
                 grid.innerHTML += `
                     <div class="review-card">
                         <img src="${r.img}">
-                        <div class="review-title">${r.title}</div>
                     </div>
                 `;
             });
@@ -333,20 +332,18 @@
         function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
 
         function adminLogin() {
-            const u = document.getElementById('adminUser').value;
             const p = document.getElementById('adminPass').value;
-            if(u === 'muslim' && p === '01274581065') {
+            if(p === '1234') {
                 document.getElementById('adminLoginForm').style.display = 'none';
                 document.getElementById('adminControls').style.display = 'block';
             } else { 
-                alert('اسم المستخدم أو كلمة المرور غير صحيحة!'); 
+                alert('كلمة المرور غير صحيحة!'); 
             }
         }
 
         function adminLogout() {
             document.getElementById('adminLoginForm').style.display = 'block';
             document.getElementById('adminControls').style.display = 'none';
-            document.getElementById('adminUser').value = '';
             document.getElementById('adminPass').value = '';
             closeAdminModal();
         }
@@ -381,13 +378,12 @@
         }
 
         function addNewReview() {
-            const title = document.getElementById('newRevTitle').value || "رأي عميل مميز";
             const fileInput = document.getElementById('newRevImgFile');
 
             if(fileInput.files && fileInput.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    reviews.push({ id: Date.now(), title: title, img: e.target.result });
+                    reviews.push({ id: Date.now(), img: e.target.result });
                     localStorage.setItem('elsheikh_revs', JSON.stringify(reviews));
                     renderReviews();
                     alert('تمت إضافة السكرين شوت بنجاح!');
