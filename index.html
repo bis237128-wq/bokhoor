@@ -6,6 +6,8 @@
     <title>بخور الشيخ | تشكيلة البخور الفاخر والأنواع الأصلية</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- استدعاء مكتبة Supabase للربط السحابي -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary-gold: #c9a84c;
@@ -151,6 +153,7 @@
         .admin-item-row { display: flex; justify-content: space-between; align-items: center; background: #0a0805; padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--card-border); }
         .admin-item-title { font-size: 14px; color: #fff; }
         .admin-del-btn { background: var(--danger-red); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .loading-text { text-align: center; color: var(--primary-gold); font-size: 14px; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -189,7 +192,7 @@
     <div class="main-container">
         <div id="productsSection">
             <h3 class="section-header"><i class="fa-solid fa-box-open"></i> المنتجات المتوفرة</h3>
-            <div class="products-grid" id="productsGrid"></div>
+            <div class="products-grid" id="productsGrid"><div class="loading-text">جاري مزامنة المنتجات سحابياً...</div></div>
         </div>
 
         <div class="reviews-section" id="reviewsSection">
@@ -229,14 +232,14 @@
             </div>
 
             <div id="adminControls" style="display:none;">
-                <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم (حفظ محلي فوري وآمن)</h3>
+                <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم (قاعدة بيانات سحابية)</h3>
                 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:8px;">إضافة منتج رئيسي جديد:</h4>
                 <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newProdName" placeholder="اسم المنتج الرئيسي"></div>
                 <div class="form-group" style="margin-bottom:10px;"><input type="number" id="newProdPrice" placeholder="السعر بـ ج.م"></div>
                 <div class="form-group" style="margin-bottom:15px;"><label>رابط صورة المنتج (URL مباشر):</label><input type="url" id="newProdImgUrl" placeholder="https://..."></div>
 
-                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewProduct()">إضافة وحفظ المنتج الرئيسي</button>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewProduct()">إضافة المنتج سحابياً</button>
                 
                 <hr style="border-color:var(--card-border); margin-bottom:20px;">
 
@@ -249,7 +252,7 @@
                 <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newVariantDesc" placeholder="وصف أو تفاصيل النوع"></div>
                 <div class="form-group" style="margin-bottom:15px;"><label>رابط صورة النوع (URL مباشر):</label><input type="url" id="newVariantImgUrl" placeholder="https://..."></div>
 
-                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewVariantToProduct()">حفظ وإضافة النكهة فوراً</button>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewVariantToProduct()">حفظ وإضافة النكهة سحابياً</button>
 
                 <hr style="border-color:var(--card-border); margin-bottom:20px;">
 
@@ -260,7 +263,7 @@
 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة صورة رأي عميل:</h4>
                 <div class="form-group" style="margin-bottom:15px;"><input type="url" id="newRevImgUrl" placeholder="رابط صورة الرأي URL مباشر"></div>
-                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة وحفظ صورة الرأي</button>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة صورة الرأي سحابياً</button>
                 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إدارة وحذف آراء العملاء:</h4>
                 <div id="adminReviewList" style="margin-bottom:20px; max-height:150px; overflow-y:auto;"></div>
@@ -277,6 +280,12 @@
     </div>
 
     <script>
+        // إعدادات اتصال Supabase الخاصة بك
+        const SUPABASE_URL = "https://zhppvfabbjffmjgsiaza.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_k6SigiKq0iAPzvxPwyW8LQ_4bdqEVEq";
+        
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         const defaultProducts = [
             { 
                 id: 1, 
@@ -300,20 +309,41 @@
             }
         ];
 
-        let products = JSON.parse(localStorage.getItem('elsheikh_products_v9')) || defaultProducts;
-        let reviews = JSON.parse(localStorage.getItem('elsheikh_reviews_v9')) || [];
+        let products = [];
+        let reviews = [];
         let quantities = {};
         let selectedVariantIndexes = {};
 
-        function saveToLocal() {
-            localStorage.setItem('elsheikh_products_v9', JSON.stringify(products));
-            localStorage.setItem('elsheikh_reviews_v9', JSON.stringify(reviews));
+        // جلب البيانات من Supabase
+        async function loadDataFromCloud() {
+            try {
+                let { data: prodData, error: prodErr } = await supabaseClient.from('products').select('*');
+                if (!prodErr && prodData && prodData.length > 0) {
+                    products = prodData;
+                } else {
+                    // إذا كان الجدول فارغاً، نقوم بإدراج المنتجات الافتراضية لأول مرة
+                    for (let p of defaultProducts) {
+                        await supabaseClient.from('products').upsert(p);
+                    }
+                    products = [...defaultProducts];
+                }
+
+                let { data: revData, error: revErr } = await supabaseClient.from('reviews').select('*');
+                if (!revErr && revData) {
+                    reviews = revData;
+                }
+            } catch(e) {
+                console.log("Error loading cloud data", e);
+                products = [...defaultProducts];
+            }
+            renderProducts();
+            renderReviews();
         }
 
         function initVisitors() {
-            let visitors = localStorage.getItem('elsheikh_visitor_count_v9');
+            let visitors = localStorage.getItem('elsheikh_visitor_count_v10');
             if (!visitors) { visitors = 1; } else { visitors = parseInt(visitors) + 1; }
-            localStorage.setItem('elsheikh_visitor_count_v9', visitors);
+            localStorage.setItem('elsheikh_visitor_count_v10', visitors);
             document.getElementById('visitorCount').innerText = visitors;
         }
 
@@ -410,18 +440,28 @@
             });
         }
 
-        function deleteProduct(id) {
-            products = products.filter(p => p.id !== id);
-            saveToLocal();
-            renderProducts();
-            renderAdminLists();
+        async function deleteProduct(id) {
+            let { error } = await supabaseClient.from('products').delete().eq('id', id);
+            if(!error) {
+                products = products.filter(p => p.id !== id);
+                renderProducts();
+                renderAdminLists();
+                alert('تم حذف المنتج سحابياً بنجاح!');
+            } else {
+                alert('حدث خطأ أثناء الحذف.');
+            }
         }
 
-        function deleteReview(id) {
-            reviews = reviews.filter(r => r.id !== id);
-            saveToLocal();
-            renderReviews();
-            renderAdminLists();
+        async function deleteReview(id) {
+            let { error } = await supabaseClient.from('reviews').delete().eq('id', id);
+            if(!error) {
+                reviews = reviews.filter(r => r.id !== id);
+                renderReviews();
+                renderAdminLists();
+                alert('تم حذف صورة الرأي سحابياً بنجاح!');
+            } else {
+                alert('حدث خطأ أثناء الحذف.');
+            }
         }
 
         function updateQty(id, delta) {
@@ -479,7 +519,7 @@
             closeAdminModal();
         }
 
-        function addNewProduct() {
+        async function addNewProduct() {
             const name = document.getElementById('newProdName').value.trim();
             const price = parseFloat(document.getElementById('newProdPrice').value);
             const urlInput = document.getElementById('newProdImgUrl').value.trim();
@@ -490,8 +530,7 @@
             }
 
             const defaultImg = urlInput !== '' ? urlInput : "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
-
-            products.push({
+            const newProd = {
                 id: Date.now(),
                 title: name,
                 price: price,
@@ -499,19 +538,23 @@
                 variants: [
                     { name: "النوع الأساسي", img: defaultImg, desc: "بخور فاخر ومميز." }
                 ]
-            });
+            };
 
-            saveToLocal();
-            renderProducts();
-            renderAdminLists();
-
-            alert('تم حفظ المنتج بنجاح ولن يختفي أبداً بعد الـ Refresh!');
-            document.getElementById('newProdName').value = '';
-            document.getElementById('newProdPrice').value = '';
-            document.getElementById('newProdImgUrl').value = '';
+            let { error } = await supabaseClient.from('products').insert([newProd]);
+            if(!error) {
+                products.push(newProd);
+                renderProducts();
+                renderAdminLists();
+                alert('تمت إضافة المنتج ومزامنته سحابياً بنجاح ولن يختفي أبداً!');
+                document.getElementById('newProdName').value = '';
+                document.getElementById('newProdPrice').value = '';
+                document.getElementById('newProdImgUrl').value = '';
+            } else {
+                alert('حدث خطأ أثناء الحفظ في قاعدة البيانات.');
+            }
         }
 
-        function addNewVariantToProduct() {
+        async function addNewVariantToProduct() {
             const prodId = parseInt(document.getElementById('targetProductSelect').value);
             const varName = document.getElementById('newVariantName').value.trim();
             const varDesc = document.getElementById('newVariantDesc').value.trim() || "بخور أصيل عالي الجودة.";
@@ -529,26 +572,34 @@
                 if(!p.variants) p.variants = [];
                 p.variants.push({ name: varName, img: defaultImg, desc: varDesc });
                 
-                saveToLocal();
-                renderProducts();
-                renderAdminLists();
-
-                alert('تم حفظ وإضافة النكهة بنجاح ولن تختفي أبداً!');
-                document.getElementById('newVariantName').value = '';
-                document.getElementById('newVariantDesc').value = '';
-                document.getElementById('newVariantImgUrl').value = '';
+                let { error } = await supabaseClient.from('products').update({ variants: p.variants }).eq('id', prodId);
+                if(!error) {
+                    renderProducts();
+                    renderAdminLists();
+                    alert('تم حفظ النكهة سحابياً بنجاح وتحديثها لدى جميع الزوار!');
+                    document.getElementById('newVariantName').value = '';
+                    document.getElementById('newVariantDesc').value = '';
+                    document.getElementById('newVariantImgUrl').value = '';
+                } else {
+                    alert('حدث خطأ أثناء حفظ النكهة.');
+                }
             }
         }
 
-        function addNewReview() {
+        async function addNewReview() {
             const urlInput = document.getElementById('newRevImgUrl').value.trim();
             if(urlInput !== '') {
-                reviews.push({ id: Date.now(), img: urlInput });
-                saveToLocal();
-                renderReviews();
-                renderAdminLists();
-                alert('تم حفظ صورة الرأي بنجاح!');
-                document.getElementById('newRevImgUrl').value = '';
+                const newRev = { id: Date.now(), img: urlInput };
+                let { error } = await supabaseClient.from('reviews').insert([newRev]);
+                if(!error) {
+                    reviews.push(newRev);
+                    renderReviews();
+                    renderAdminLists();
+                    alert('تمت إضافة وحفظ صورة الرأي سحابياً بنجاح!');
+                    document.getElementById('newRevImgUrl').value = '';
+                } else {
+                    alert('حدث خطأ أثناء حفظ صورة الرأي.');
+                }
             } else {
                 alert('برجاء إضافة رابط صورة الرأي (URL) أولاً.');
             }
@@ -568,8 +619,7 @@
         function scrollToSection(id) { document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
 
         initVisitors();
-        renderProducts();
-        renderReviews();
+        loadDataFromCloud();
     </script>
 </body>
 </html>
