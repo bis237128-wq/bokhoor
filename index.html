@@ -3,743 +3,407 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بخور الشيخ | متجر البخور والمسك الفاخر</title>
-    <!-- Google Fonts & FontAwesome icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <title>تشكيلة بخور الشيخ والأنواع الفاخرة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-gold: #d4af37;
-            --dark-gold: #aa820a;
-            --bg-black: #0f0f0f;
-            --card-black: #1a1a1a;
-            --text-light: #f4f4f4;
-            --text-muted: #a0a0a0;
+            --primary-gold: #c9a84c;
+            --bg-dark: #0a0805;
+            --card-bg: #13100b;
+            --card-border: rgba(201, 168, 76, 0.2);
+            --text-white: #ffffff;
+            --text-muted: #a1998e;
             --whatsapp-green: #25D366;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Tajawal', sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
 
         body {
-            background-color: var(--bg-black);
-            color: var(--text-light);
+            background-color: var(--bg-dark);
+            color: var(--text-white);
             line-height: 1.6;
-            padding-bottom: 80px;
+            padding-bottom: 60px;
         }
 
-        /* Header / Navbar */
         header {
-            background: linear-gradient(180deg, #000000 0%, #1a1a1a 100%);
-            border-bottom: 2px solid var(--primary-gold);
-            padding: 15px 20px;
+            background-color: rgba(15, 12, 8, 0.95);
+            border-bottom: 1px solid var(--card-border);
+            padding: 15px 30px;
             position: sticky;
             top: 0;
             z-index: 1000;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.15);
         }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .brand-container { display: flex; align-items: center; gap: 15px; }
 
-        .brand-icon {
-            font-size: 28px;
-            color: var(--primary-gold);
-        }
-
-        .brand-title h1 {
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--primary-gold);
-            letter-spacing: 0.5px;
-        }
-
-        .brand-title p {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .admin-link-btn {
-            background: transparent;
-            border: 1px solid var(--primary-gold);
-            color: var(--primary-gold);
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.3s;
-        }
-
-        .admin-link-btn:hover {
-            background: var(--primary-gold);
-            color: #000;
-        }
-
-        .cart-status-btn {
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid var(--primary-gold);
-            color: var(--text-light);
-            padding: 8px 14px;
-            border-radius: 20px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-
-        .cart-count {
-            background: var(--primary-gold);
-            color: #000;
-            font-weight: bold;
-            padding: 2px 7px;
+        .brand-logo-circle {
+            width: 45px; height: 45px;
+            background: linear-gradient(135deg, #c9a84c 0%, #8c7128 100%);
             border-radius: 50%;
-            font-size: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: #000; font-weight: 900; font-size: 22px;
         }
 
-        /* Hero Banner */
-        .hero {
-            text-align: center;
-            padding: 40px 20px 30px;
-            background: radial-gradient(circle, rgba(212,175,55,0.08) 0%, rgba(15,15,15,1) 80%);
-            border-bottom: 1px solid #222;
+        .brand-title-box h1 { font-size: 22px; font-weight: 800; color: var(--primary-gold); }
+        .brand-title-box p { font-size: 11px; color: var(--text-muted); }
+
+        .nav-links-right { display: flex; align-items: center; gap: 20px; }
+        .nav-link { color: var(--text-white); text-decoration: none; font-size: 14px; cursor: pointer; }
+        .nav-link:hover { color: var(--primary-gold); }
+
+        .nav-btn-gold {
+            background: transparent; border: 1px solid var(--primary-gold);
+            color: var(--primary-gold); padding: 7px 16px; border-radius: 20px;
+            font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;
+        }
+        .nav-btn-gold:hover { background: var(--primary-gold); color: #000; }
+
+        .visitor-widget {
+            position: fixed; bottom: 20px; left: 20px;
+            background: rgba(19, 16, 11, 0.9); border: 1px solid var(--card-border);
+            padding: 8px 15px; border-radius: 12px; display: flex; align-items: center; gap: 10px; z-index: 999;
+        }
+        .visitor-widget i { color: #25D366; font-size: 18px; }
+        .visitor-info span { font-size: 10px; color: var(--text-muted); display: block; }
+        .visitor-info strong { font-size: 14px; color: var(--primary-gold); }
+
+        .hero-section { text-align: center; padding: 60px 20px 40px; }
+        .hero-title { font-size: 44px; font-weight: 900; color: var(--primary-gold); margin-bottom: 12px; }
+        .hero-subtitle { font-size: 17px; color: var(--text-muted); max-width: 650px; margin: 0 auto; }
+
+        .main-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+        .section-header { font-size: 24px; font-weight: 800; color: var(--primary-gold); margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
+
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 25px; margin-bottom: 60px; }
+        .product-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+        .product-img-box { position: relative; width: 100%; height: 240px; background-color: #050403; }
+        .product-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .badge-tag { position: absolute; top: 15px; right: 15px; background: #c9a84c; color: #000; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 12px; }
+        .product-content { padding: 20px; display: flex; flex-direction: column; flex-grow: 1; }
+        .product-name { font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+        .product-price { font-size: 18px; font-weight: 800; color: var(--primary-gold); margin-bottom: 15px; }
+        
+        .scent-dropdown {
+            width: 100%; padding: 10px; background-color: #0a0805;
+            border: 1px solid var(--card-border); border-radius: 8px; color: #fff;
+            outline: none; margin-bottom: 15px; cursor: pointer;
         }
 
-        .hero h2 {
-            font-size: 28px;
-            color: var(--primary-gold);
-            margin-bottom: 10px;
-        }
+        .qty-row { display: flex; align-items: center; justify-content: space-between; background: #0a0805; border: 1px solid var(--card-border); border-radius: 8px; padding: 4px; }
+        .qty-btn { background: #1a1610; color: var(--primary-gold); border: none; width: 32px; height: 32px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .qty-val { font-weight: bold; color: #fff; }
 
-        .hero p {
-            color: var(--text-muted);
-            max-width: 600px;
-            margin: 0 auto;
-            font-size: 15px;
-        }
+        .reviews-section { margin-bottom: 60px; }
+        .reviews-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .review-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden; }
+        .review-card img { width: 100%; height: 260px; object-fit: cover; display: block; }
+        .review-title { padding: 10px; text-align: center; font-size: 13px; color: var(--primary-gold); background: #0a0805; border-top: 1px solid var(--card-border); }
 
-        /* Main Container & Products Grid */
-        .container {
-            max-width: 1100px;
-            margin: 30px auto;
-            padding: 0 15px;
-        }
-
-        .section-title {
-            font-size: 22px;
-            color: var(--primary-gold);
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border-right: 4px solid var(--primary-gold);
-            padding-right: 12px;
-        }
-
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
-        }
-
-        .product-card {
-            background-color: var(--card-black);
-            border: 1px solid #2a2a2a;
-            border-radius: 12px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.3s, border-color 0.3s;
-        }
-
-        .product-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--primary-gold);
-        }
-
-        .product-img-box {
-            position: relative;
-            width: 100%;
-            height: 230px;
-            background-color: #111;
-            overflow: hidden;
+        .order-box { background: var(--card-bg); border: 1px solid var(--primary-gold); border-radius: 16px; padding: 30px; margin-bottom: 40px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 12px; color: var(--primary-gold); margin-bottom: 6px; }
+        .form-group input { width: 100%; padding: 12px; background: #0a0805; border: 1px solid var(--card-border); border-radius: 8px; color: #fff; outline: none; }
+        
+        .form-group input[type="file"] {
+            padding: 8px;
             cursor: pointer;
-        }
-
-        .product-img-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.4s;
-        }
-
-        .product-card:hover .product-img-box img {
-            transform: scale(1.05);
-        }
-
-        .price-tag {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(0,0,0,0.85);
-            border: 1px solid var(--primary-gold);
             color: var(--primary-gold);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 15px;
+            background: #0a0805;
         }
 
-        .product-details {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
+        .order-summary { display: flex; justify-content: space-between; align-items: center; background: #0a0805; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; border: 1px dashed var(--card-border); }
+        
+        .submit-btn {
+            width: 100%; background: var(--whatsapp-green); color: #fff; border: none;
+            padding: 15px; border-radius: 10px; font-size: 17px; font-weight: 800; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
         }
 
-        .product-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 8px;
-        }
-
-        .product-desc {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 15px;
-            flex-grow: 1;
-        }
-
-        .scent-select-group {
-            margin-bottom: 15px;
-        }
-
-        .scent-select-group label {
-            display: block;
-            font-size: 12px;
-            color: var(--primary-gold);
-            margin-bottom: 6px;
-        }
-
-        .scent-select {
-            width: 100%;
-            padding: 10px;
-            background-color: #0f0f0f;
-            border: 1px solid #333;
-            border-radius: 6px;
-            color: #fff;
-            outline: none;
-            cursor: pointer;
-        }
-
-        .scent-select:focus {
-            border-color: var(--primary-gold);
-        }
-
-        .quantity-control {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background-color: #0f0f0f;
-            border: 1px solid #333;
-            border-radius: 6px;
-            padding: 5px;
-        }
-
-        .qty-btn {
-            background: #222;
-            color: var(--primary-gold);
-            border: none;
-            width: 35px;
-            height: 35px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .qty-btn:hover {
-            background: var(--primary-gold);
-            color: #000;
-        }
-
-        .qty-input {
-            width: 40px;
-            text-align: center;
-            background: transparent;
-            border: none;
-            color: #fff;
-            font-weight: bold;
-            font-size: 16px;
-        }
-
-        /* Order Form Section */
-        .order-section {
-            background-color: var(--card-black);
-            border: 1px solid var(--primary-gold);
-            border-radius: 12px;
-            padding: 25px;
-            margin-top: 30px;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            color: var(--primary-gold);
-            margin-bottom: 5px;
-        }
-
-        .form-group input, .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            background-color: #0f0f0f;
-            border: 1px solid #333;
-            border-radius: 6px;
-            color: #fff;
-            outline: none;
-        }
-
-        .form-group input:focus, .form-group textarea:focus {
-            border-color: var(--primary-gold);
-        }
-
-        .total-summary {
-            background-color: #0f0f0f;
-            padding: 15px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border: 1px dashed #444;
-        }
-
-        .total-price {
-            font-size: 20px;
-            font-weight: 800;
-            color: var(--primary-gold);
-        }
-
-        .whatsapp-submit-btn {
-            width: 100%;
-            background-color: var(--whatsapp-green);
-            color: #fff;
-            border: none;
-            padding: 16px;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: background 0.3s;
-        }
-
-        .whatsapp-submit-btn:hover {
-            background-color: #1ebc57;
-        }
-
-        /* Modals & Dashboard Overlay */
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            padding: 15px;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 20px;
         }
-
-        .modal-card {
-            background: var(--card-black);
-            border: 1px solid var(--primary-gold);
-            border-radius: 12px;
-            width: 100%;
-            max-width: 500px;
-            padding: 25px;
-            position: relative;
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            color: #888;
-            font-size: 20px;
-            cursor: pointer;
-        }
-
-        .close-modal:hover { color: #fff; }
-
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 20px;
-            background-color: #080808;
-            border-top: 1px solid #222;
-            color: var(--text-muted);
-            font-size: 13px;
-            margin-top: 50px;
-        }
+        .modal-card { background: var(--card-bg); border: 1px solid var(--primary-gold); border-radius: 16px; width: 100%; max-width: 500px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .close-btn { position: absolute; top: 15px; left: 15px; color: var(--text-muted); cursor: pointer; font-size: 20px; }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
     <header>
-        <div class="brand">
-            <i class="fa-solid fa-fire-flame-curved brand-icon"></i>
-            <div class="brand-title">
+        <div class="brand-container">
+            <div class="brand-logo-circle">ب</div>
+            <div class="brand-title-box">
                 <h1>بخور الشيخ</h1>
                 <p>عطور وبخور فاخر بلمسة أصلية</p>
             </div>
         </div>
-        <div class="nav-actions">
-            <button class="admin-link-btn" onclick="openAdminModal()"><i class="fa-solid fa-user-shield"></i> لوحة التحكم</button>
-            <div class="cart-status-btn" onclick="scrollToOrderForm()">
-                <i class="fa-solid fa-cart-shopping"></i>
-                <span class="cart-count" id="cartCount">0</span>
-            </div>
+        <div class="nav-links-right">
+            <a class="nav-link" onclick="scrollToSection('productsSection')">المنتجات</a>
+            <a class="nav-link" onclick="scrollToSection('reviewsSection')">آراء العملاء</a>
+            <button class="nav-btn-gold" onclick="openAdminModal()"><i class="fa-solid fa-lock"></i> لوحة المالك</button>
         </div>
     </header>
 
-    <!-- Hero -->
-    <section class="hero">
-        <h2>تشكيلة بخور الشيخ والأنواع الفاخرة</h2>
-        <p>اختر العبوة والرائحة المفضلة لديك وسنصلك فوراً عبر خدمة الطلب المباشر</p>
+    <div class="visitor-widget">
+        <i class="fa-solid fa-users"></i>
+        <div class="visitor-info">
+            <span>زوار المتجر</span>
+            <strong id="visitorCount">108</strong>
+        </div>
+    </div>
+
+    <!-- Hero Banner with requested title -->
+    <section class="hero-section">
+        <h2 class="hero-title">تشكيلة بخور الشيخ والأنواع الفاخرة</h2>
+        <p class="hero-subtitle">اختر العبوة والرائحة المفضلة لديك وسنصلك فوراً عبر خدمة الطلب المباشر</p>
     </section>
 
-    <!-- Main Container -->
-    <div class="container">
-        <h3 class="section-title"><i class="fa-solid fa-box-open"></i> منتجاتنا المتاحة</h3>
-        <div class="products-grid" id="productsGrid">
-            <!-- المنتجات تُحمل تلقائياً هنا -->
+    <div class="main-container">
+        <div id="productsSection">
+            <h3 class="section-header"><i class="fa-solid fa-box-open"></i> المنتجات المتوفرة</h3>
+            <div class="products-grid" id="productsGrid"></div>
         </div>
 
-        <!-- Order Form Section -->
-        <div class="order-section" id="orderSection">
-            <h3 class="section-title" style="border:none; padding:0; margin-bottom:15px;">
-                <i class="fa-solid fa-file-invoice"></i> إتمام الطلب الشحن والتوصيل
-            </h3>
-            
+        <div class="reviews-section" id="reviewsSection">
+            <h3 class="section-header"><i class="fa-solid fa-comments"></i> آراء العملاء (سكرينات)</h3>
+            <div class="reviews-grid" id="reviewsGrid"></div>
+        </div>
+
+        <div class="order-box" id="orderBox">
+            <h3 class="section-header" style="margin-bottom:15px;"><i class="fa-solid fa-file-invoice"></i> إتمام الطلب الشحن والتوصيل</h3>
             <div class="form-grid">
-                <div class="form-group">
-                    <label>الاسم بالكامل *</label>
-                    <input type="text" id="custName" placeholder="أدخل اسمك الكريم">
-                </div>
-                <div class="form-group">
-                    <label>رقم الهاتف / الواتساب *</label>
-                    <input type="tel" id="custPhone" placeholder="01xxxxxxxxx">
-                </div>
-                <div class="form-group">
-                    <label>العنوان التفصيلي (المحافظة / المنطقة / الشارع) *</label>
-                    <input type="text" id="custAddress" placeholder="أدخل عنوان الشحن التفصيلي">
-                </div>
+                <div class="form-group"><label>الاسم بالكامل *</label><input type="text" id="custName" placeholder="أدخل اسمك الكريم"></div>
+                <div class="form-group"><label>رقم الواتساب / الهاتف *</label><input type="tel" id="custPhone" placeholder="01xxxxxxxxx"></div>
+                <div class="form-group"><label>العنوان التفصيلي *</label><input type="text" id="custAddress" placeholder="أدخل العنوان التفصيلي"></div>
             </div>
-
-            <div class="total-summary">
-                <span>إجمالي الطلب الكلي:</span>
-                <span class="total-price" id="grandTotalPrice">0 جنيه مصري</span>
+            <div class="order-summary">
+                <span>إجمالي الطلب:</span>
+                <strong style="color:var(--primary-gold); font-size:20px;" id="grandTotalPrice">0 ج.م</strong>
             </div>
-
-            <button class="whatsapp-submit-btn" onclick="sendOrderToWhatsApp()">
-                <i class="fa-brands fa-whatsapp" style="font-size:24px;"></i> تأكيد الطلب المباشر عبر الواتساب
+            <button class="submit-btn" onclick="sendOrderToWhatsApp()">
+                <i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> تأكيد الطلب المباشر عبر الواتساب
             </button>
         </div>
     </div>
 
-    <!-- Admin Panel Modal -->
+    <!-- Admin Panel Modal (Protected) -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-card">
-            <i class="fa-solid fa-xmark close-modal" onclick="closeAdminModal()"></i>
+            <i class="fa-solid fa-xmark close-btn" onclick="closeAdminModal()"></i>
             
-            <!-- Login State -->
             <div id="adminLoginForm">
-                <h3 style="color:var(--primary-gold); margin-bottom:15px; text-align:center;">دخول لوحة تحكم المسؤول</h3>
-                <div class="form-group" style="margin-bottom:12px;">
-                    <label>اسم المستخدم (Username)</label>
-                    <input type="text" id="adminUser" placeholder="admin">
-                </div>
-                <div class="form-group" style="margin-bottom:20px;">
-                    <label>كلمة المرور (Password)</label>
-                    <input type="password" id="adminPass" placeholder="••••••••">
-                </div>
-                <button class="whatsapp-submit-btn" style="background:var(--primary-gold); color:#000;" onclick="adminLogin()">دخول</button>
+                <h3 style="color:var(--primary-gold); margin-bottom:15px; text-align:center;">دخول لوحة تحكم المالك</h3>
+                <div class="form-group" style="margin-bottom:12px;"><label>اسم المستخدم</label><input type="text" id="adminUser" placeholder="muslim"></div>
+                <div class="form-group" style="margin-bottom:20px;"><label>كلمة المرور</label><input type="password" id="adminPass" placeholder="••••••••"></div>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000;" onclick="adminLogin()">دخول</button>
             </div>
 
-            <!-- Dashboard Controls State -->
-            <div id="adminDashboardControls" style="display:none;">
-                <h3 style="color:var(--primary-gold); margin-bottom:15px;">إدارة المنتجات والتعديل</h3>
-                <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">يمكنك تعديل الأسعار أو إضافة منتج جديد بكل سهولة:</p>
+            <div id="adminControls" style="display:none;">
+                <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم والرفع (محمية)</h3>
                 
+                <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة منتج جديد:</h4>
+                <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newProdName" placeholder="اسم المنتج"></div>
+                <div class="form-group" style="margin-bottom:10px;"><input type="number" id="newProdPrice" placeholder="السعر بـ ج.م"></div>
                 <div class="form-group" style="margin-bottom:10px;">
-                    <label>اسم المنتج</label>
-                    <input type="text" id="newProdName">
+                    <label>اختر صورة المنتج من معرض الجهاز:</label>
+                    <input type="file" id="newProdImgFile" accept="image/*">
                 </div>
-                <div class="form-group" style="margin-bottom:10px;">
-                    <label>السعر (جنيه)</label>
-                    <input type="number" id="newProdPrice">
-                </div>
-                <div class="form-group" style="margin-bottom:10px;">
-                    <label>رابط الصورة</label>
-                    <input type="text" id="newProdImg">
-                </div>
-                <div class="form-group" style="margin-bottom:15px;">
-                    <label>الروائح (مفصولة بـ فاصلة ,)</label>
-                    <input type="text" id="newProdScents" placeholder="أرابيسك, روح المسك, جذور العود">
-                </div>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewProduct()">إضافة المنتج</button>
                 
-                <button class="whatsapp-submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:10px;" onclick="addNewProductFromAdmin()">إضافة المنتج فوراً</button>
-                <button class="whatsapp-submit-btn" style="background:#555; color:#fff;" onclick="adminLogout()">تسجيل الخروج</button>
-            </div>
+                <hr style="border-color:var(--card-border); margin-bottom:20px;">
 
+                <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة سكرين شوت رأي عميل:</h4>
+                <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newRevTitle" placeholder="اسم العميل أو الوصف"></div>
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label>اختر صورة السكرين شوت من معرض الجهاز:</label>
+                    <input type="file" id="newRevImgFile" accept="image/*">
+                </div>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة السكرين شوت</button>
+                
+                <button class="submit-btn" style="background:#333; color:#fff; margin-top:20px;" onclick="adminLogout()">تسجيل الخروج</button>
+            </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer>
-        <p>جميع الحقوق محفوظة لمتجر © بخور الشيخ 2026 | تطوير آمن ومستقل 100%</p>
-    </footer>
-
-    <!-- JavaScript Script Code -->
     <script>
-        // المنتجات الأساسية الافتراضية للبدء
+        function initVisitors() {
+            let visitors = localStorage.getItem('elsheikh_visitor_count') || 108;
+            visitors = parseInt(visitors) + 1;
+            localStorage.setItem('elsheikh_visitor_count', visitors);
+            document.getElementById('visitorCount').innerText = visitors;
+        }
+
         const defaultProducts = [
-            {
-                id: 1,
-                title: "بخور أرابيسك أعواد 5 ساعات",
-                price: 75,
-                desc: "أعواد بخور جالاكسي سميكة فاخرة بتركيز قوي تدوم حتى 5 ساعات متواصلة.",
-                img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg",
-                scents: ["أرابيسك كلاسيك", "روح المسك (العلبة الحمراء)", "جذور العود", "نفائس العنبر", "أنسام الأندلس"]
-            },
-            {
-                id: 2,
-                title: "بخور أرابيسك أعواد 3 ساعات (ميني)",
-                price: 50,
-                desc: "أعواد بخور ميني جالاكسي الفاخرة ذات رائحة نفاذة تدوم حتى 3 ساعات.",
-                img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg",
-                scents: ["أرابيسك ميني", "روح المسك (العلبة الموف)", "جذور العود", "أنسام مكة", "عبير الورد"]
-            },
-            {
-                id: 3,
-                title: "البخور القمع الهرمي (كنوز الماضي - 15 قمع)",
-                price: 70,
-                desc: "عبوة تحتوي على 15 قمع بخور مخروطي ذاتي الاشتعال مدة اشتعال القمع 45 دقيقة مع قاعدة للتثبيت.",
-                img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg",
-                scents: ["أقماع أرابيسك الهرمية", "أقماع باقة زهور (المزخرفة)", "أقماع روح المسك", "أقماع جذور العود"]
-            }
+            { id: 1, title: "بخور أرابيسك أعواد 5 ساعات", price: 75, badge: "الأكثر مبيعاً", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["أرابيسك كلاسيك", "روح المسك", "جذور العود"] },
+            { id: 2, title: "بخور أرابيسك أعواد 3 ساعات (ميني)", price: 50, badge: "مميز", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["أرابيسك ميني", "عبير الورد"] },
+            { id: 3, title: "البخور القمع الهرمي", price: 70, badge: "فاخر", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["أقماع هرمية", "نفائس العنبر"] }
         ];
 
-        let products = JSON.parse(localStorage.getItem('elsheikh_products')) || defaultProducts;
-        let selectedQuantities = {};
+        const defaultReviews = [
+            { id: 1, title: "رأي أبو عبد الله", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg" },
+            { id: 2, title: "رأي أم سارة", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg" }
+        ];
+
+        let products = JSON.parse(localStorage.getItem('elsheikh_prods')) || defaultProducts;
+        let reviews = JSON.parse(localStorage.getItem('elsheikh_revs')) || defaultReviews;
+        let quantities = {};
         let selectedScents = {};
 
-        // تحميل وتأطير عرض المنتجات
         function renderProducts() {
             const grid = document.getElementById('productsGrid');
             grid.innerHTML = '';
-
-            products.forEach(prod => {
-                if(!selectedQuantities[prod.id]) selectedQuantities[prod.id] = 0;
-                if(!selectedScents[prod.id]) selectedScents[prod.id] = prod.scents[0];
-
-                const card = document.createElement('div');
-                card.className = 'product-card';
-                card.innerHTML = `
-                    <div class="product-img-box">
-                        <img src="${prod.img}" alt="${prod.title}">
-                        <div class="price-tag">${prod.price} ج.م</div>
-                    </div>
-                    <div class="product-details">
-                        <h4 class="product-title">${prod.title}</h4>
-                        <p class="product-desc">${prod.desc}</p>
-                        
-                        <div class="scent-select-group">
-                            <label><i class="fa-solid fa-spray-can"></i> اختر الرائحة / اللون:</label>
-                            <select class="scent-select" onchange="updateScent(${prod.id}, this.value)">
-                                ${prod.scents.map(s => `<option value="${s}">${s}</option>`).join('')}
-                            </select>
+            products.forEach(p => {
+                if(!quantities[p.id]) quantities[p.id] = 0;
+                if(!selectedScents[p.id]) selectedScents[p.id] = p.scents[0];
+                grid.innerHTML += `
+                    <div class="product-card">
+                        <div class="product-img-box">
+                            <img src="${p.img}">
+                            ${p.badge ? `<span class="badge-tag">${p.badge}</span>` : ''}
                         </div>
-
-                        <div class="quantity-control">
-                            <button class="qty-btn" onclick="changeQty(${prod.id}, -1)">-</button>
-                            <input type="text" class="qty-input" id="qty-${prod.id}" value="${selectedQuantities[prod.id]}" readonly>
-                            <button class="qty-btn" onclick="changeQty(${prod.id}, 1)">+</button>
+                        <div class="product-content">
+                            <div class="product-name">${p.title}</div>
+                            <div class="product-price">${p.price} ج.م</div>
+                            <select class="scent-dropdown" onchange="selectedScents[${p.id}]=this.value">
+                                ${p.scents.map(s => `<option value="${s}">${s}</option>`).join('')}
+                            </select>
+                            <div class="qty-row">
+                                <button class="qty-btn" onclick="updateQty(${p.id}, -1)">-</button>
+                                <span class="qty-val" id="qty-${p.id}">${quantities[p.id]}</span>
+                                <button class="qty-btn" onclick="updateQty(${p.id}, 1)">+</button>
+                            </div>
                         </div>
                     </div>
                 `;
-                grid.appendChild(card);
             });
-            updateGrandTotal();
+            calcTotal();
         }
 
-        function updateScent(prodId, scent) {
-            selectedScents[prodId] = scent;
-        }
-
-        function changeQty(prodId, delta) {
-            let current = selectedQuantities[prodId] || 0;
-            current += delta;
-            if (current < 0) current = 0;
-            selectedQuantities[prodId] = current;
-            document.getElementById(`qty-${prodId}`).value = current;
-            updateGrandTotal();
-        }
-
-        function updateGrandTotal() {
-            let grandTotal = 0;
-            let totalItemsCount = 0;
-
-            products.forEach(prod => {
-                const qty = selectedQuantities[prod.id] || 0;
-                grandTotal += qty * prod.price;
-                totalItemsCount += qty;
+        function renderReviews() {
+            const grid = document.getElementById('reviewsGrid');
+            grid.innerHTML = '';
+            reviews.forEach(r => {
+                grid.innerHTML += `
+                    <div class="review-card">
+                        <img src="${r.img}">
+                        <div class="review-title">${r.title}</div>
+                    </div>
+                `;
             });
-
-            document.getElementById('cartCount').innerText = totalItemsCount;
-            document.getElementById('grandTotalPrice').innerText = grandTotal + " جنيه مصري";
         }
 
-        function scrollToOrderForm() {
-            document.getElementById('orderSection').scrollIntoView({ behavior: 'smooth' });
+        function updateQty(id, delta) {
+            quantities[id] = Math.max(0, (quantities[id] || 0) + delta);
+            document.getElementById(`qty-${id}`).innerText = quantities[id];
+            calcTotal();
         }
 
-        // إرسال الطلب عبر الواتساب للرقم المطلوب
+        function calcTotal() {
+            let total = 0;
+            products.forEach(p => { total += (quantities[p.id] || 0) * p.price; });
+            document.getElementById('grandTotalPrice').innerText = total + ' ج.م';
+        }
+
         function sendOrderToWhatsApp() {
             const name = document.getElementById('custName').value.trim();
             const phone = document.getElementById('custPhone').value.trim();
             const address = document.getElementById('custAddress').value.trim();
-
-            if (!name || !phone || !address) {
-                alert('برجاء كتابة الاسم، رقم الهاتف، والعنوان التفصيلي لإتمام الطلب.');
-                return;
-            }
-
-            let orderItemsText = "";
-            let grandTotal = 0;
-            let hasItems = false;
-
-            products.forEach(prod => {
-                const qty = selectedQuantities[prod.id] || 0;
-                if (qty > 0) {
+            if(!name || !phone || !address) { alert('برجاء كتابة بياناتك للتوصيل'); return; }
+            let text = `✨ *طلب جديد من متجر بخور الشيخ* ✨\n\n👤الاسم: ${name}\n📱الهاتف: ${phone}\n📍العنوان: ${address}\n\nالطلبات:\n`;
+            let total = 0, hasItems = false;
+            products.forEach(p => {
+                let q = quantities[p.id] || 0;
+                if(q > 0) {
                     hasItems = true;
-                    const itemTotal = qty * prod.price;
-                    grandTotal += itemTotal;
-                    orderItemsText += `• ${prod.title}\n  - الرائحة: ${selectedScents[prod.id]}\n  - الكمية: ${qty} عبوة | السعر: ${itemTotal} ج.م\n\n`;
+                    let t = q * p.price;
+                    total += t;
+                    text += `• ${p.title} (${selectedScents[p.id]}) - الكمية: ${q} | السعر: ${t} ج.م\n`;
                 }
             });
-
-            if (!hasItems) {
-                alert('برجاء تحديد كمية المنتجات المطلوبة أولاً (+).');
-                return;
-            }
-
-            const message = `✨ *طلب جديد من موقع بخور الشيخ* ✨\n\n` +
-                `👤 *بيانات العميل:*\n` +
-                `• الاسم: ${name}\n` +
-                `• الهاتف: ${phone}\n` +
-                `• العنوان: ${address}\n\n` +
-                `📦 *تفاصيل المنتجات المطلوبة:*\n${orderItemsText}` +
-                `💰 *الإجمالي النهائي:* ${grandTotal} جنيه مصري\n\n` +
-                `يرجى تأكيد الطلب وتجهيز الشحن.`;
-
-            const targetPhone = "201278771472"; // رقم الواتساب المعتمد
-            const encodedUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
-            window.open(encodedUrl, '_blank');
+            if(!hasItems) { alert('برجاء اختيار كمية المنتجات أولاً'); return; }
+            text += `\n💰 الإجمالي: ${total} جنيه مصري`;
+            window.open(`https://wa.me/201278771472?text=${encodeURIComponent(text)}`, '_blank');
         }
 
-        // Admin Modal Controls
-        function openAdminModal() {
-            document.getElementById('adminModal').style.display = 'flex';
-        }
-
-        function closeAdminModal() {
-            document.getElementById('adminModal').style.display = 'none';
-        }
+        function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; }
+        function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
 
         function adminLogin() {
-            const user = document.getElementById('adminUser').value;
-            const pass = document.getElementById('adminPass').value;
-
-            // يمكنك تغيير اسم المستخدم وكلمة المرور من هنا
-            if (user === 'admin' && pass === '123456') {
+            const u = document.getElementById('adminUser').value;
+            const p = document.getElementById('adminPass').value;
+            if(u === 'muslim' && p === '01274581065') {
                 document.getElementById('adminLoginForm').style.display = 'none';
-                document.getElementById('adminDashboardControls').style.display = 'block';
-            } else {
-                alert('اسم المستخدم أو كلمة المرور غير صحيحة!');
+                document.getElementById('adminControls').style.display = 'block';
+            } else { 
+                alert('اسم المستخدم أو كلمة المرور غير صحيحة!'); 
             }
         }
 
         function adminLogout() {
             document.getElementById('adminLoginForm').style.display = 'block';
-            document.getElementById('adminDashboardControls').style.display = 'none';
+            document.getElementById('adminControls').style.display = 'none';
+            document.getElementById('adminUser').value = '';
+            document.getElementById('adminPass').value = '';
             closeAdminModal();
         }
 
-        function addNewProductFromAdmin() {
+        function addNewProduct() {
             const name = document.getElementById('newProdName').value;
             const price = parseFloat(document.getElementById('newProdPrice').value);
-            const img = document.getElementById('newProdImg').value || "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
-            const scentsStr = document.getElementById('newProdScents').value;
+            const fileInput = document.getElementById('newProdImgFile');
 
-            if (!name || isNaN(price)) {
-                alert('يرجى أدخال اسم المنتج والسعر بشكل صحيح.');
+            if(!name || isNaN(price)) {
+                alert('برجاء كتابة اسم المنتج والسعر بشكل صحيح.');
                 return;
             }
 
-            const scents = scentsStr ? scentsStr.split(',').map(s => s.trim()) : ["أرابيسك أصلي"];
-
-            const newProd = {
-                id: Date.now(),
-                title: name,
-                price: price,
-                desc: "منتج فاخر من بخور الشيخ",
-                img: img,
-                scents: scents
-            };
-
-            products.push(newProd);
-            localStorage.setItem('elsheikh_products', JSON.stringify(products));
-            renderProducts();
-            alert('تمت إضافة المنتج بنجاح!');
-            closeAdminModal();
+            if(fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    products.push({ id: Date.now(), title: name, price: price, img: e.target.result, scents: ["أصلية"] });
+                    localStorage.setItem('elsheikh_prods', JSON.stringify(products));
+                    renderProducts();
+                    alert('تمت إضافة المنتج بنجاح!');
+                    closeAdminModal();
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                products.push({ id: Date.now(), title: name, price: price, img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["أصلية"] });
+                localStorage.setItem('elsheikh_prods', JSON.stringify(products));
+                renderProducts();
+                alert('تمت إضافة المنتج بنجاح!');
+                closeAdminModal();
+            }
         }
 
-        // تشغيل البداية
+        function addNewReview() {
+            const title = document.getElementById('newRevTitle').value || "رأي عميل مميز";
+            const fileInput = document.getElementById('newRevImgFile');
+
+            if(fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    reviews.push({ id: Date.now(), title: title, img: e.target.result });
+                    localStorage.setItem('elsheikh_revs', JSON.stringify(reviews));
+                    renderReviews();
+                    alert('تمت إضافة السكرين شوت بنجاح!');
+                    closeAdminModal();
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                alert('برجاء اختيار صورة السكرين شوت من المعرض أولاً.');
+            }
+        }
+
+        function scrollToSection(id) { document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
+
+        initVisitors();
         renderProducts();
+        renderReviews();
     </script>
 </body>
 </html>
