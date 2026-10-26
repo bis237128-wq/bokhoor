@@ -88,24 +88,31 @@
         .main-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
         .section-header { font-size: 24px; font-weight: 800; color: var(--primary-gold); margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
 
-        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 25px; margin-bottom: 60px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; margin-bottom: 60px; }
         .product-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
-        .product-img-box { position: relative; width: 100%; height: 240px; background-color: #050403; }
-        .product-img-box img { width: 100%; height: 100%; object-fit: cover; }
-        .badge-tag { position: absolute; top: 15px; right: 15px; background: #c9a84c; color: #000; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 12px; }
+        .product-img-box { position: relative; width: 100%; height: 320px; background-color: #050403; }
+        .product-img-box img { width: 100%; height: 100%; object-fit: contain; padding: 10px; transition: all 0.3s ease; }
+        .badge-tag { position: absolute; top: 15px; right: 15px; background: #c9a84c; color: #000; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 12px; z-index: 2; }
         .product-content { padding: 20px; display: flex; flex-direction: column; flex-grow: 1; }
-        .product-name { font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 8px; }
-        .product-price { font-size: 18px; font-weight: 800; color: var(--primary-gold); margin-bottom: 15px; }
+        .product-name { font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+        .product-price { font-size: 18px; font-weight: 800; color: var(--primary-gold); margin-bottom: 12px; }
         
+        .variant-box { margin-bottom: 15px; }
+        .variant-label { font-size: 12px; color: var(--primary-gold); margin-bottom: 5px; display: block; font-weight: bold; }
         .scent-dropdown {
-            width: 100%; padding: 10px; background-color: #0a0805;
-            border: 1px solid var(--card-border); border-radius: 8px; color: #fff;
-            outline: none; margin-bottom: 15px; cursor: pointer;
+            width: 100%; padding: 12px; background-color: #0a0805;
+            border: 1px solid var(--primary-gold); border-radius: 8px; color: #fff;
+            outline: none; cursor: pointer; font-weight: bold; font-size: 14px;
+        }
+        .scent-desc {
+            font-size: 12px; color: var(--text-muted); background: #080604;
+            padding: 10px; border-radius: 6px; border-right: 3px solid var(--primary-gold);
+            margin-top: 8px; min-height: 45px;
         }
 
-        .qty-row { display: flex; align-items: center; justify-content: space-between; background: #0a0805; border: 1px solid var(--card-border); border-radius: 8px; padding: 4px; }
-        .qty-btn { background: #1a1610; color: var(--primary-gold); border: none; width: 32px; height: 32px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .qty-val { font-weight: bold; color: #fff; }
+        .qty-row { display: flex; align-items: center; justify-content: space-between; background: #0a0805; border: 1px solid var(--card-border); border-radius: 8px; padding: 4px; margin-top: auto; }
+        .qty-btn { background: #1a1610; color: var(--primary-gold); border: none; width: 35px; height: 35px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .qty-val { font-weight: bold; color: #fff; font-size: 16px; }
 
         .reviews-section { margin-bottom: 60px; }
         .reviews-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
@@ -115,7 +122,7 @@
         .order-box { background: var(--card-bg); border: 1px solid var(--primary-gold); border-radius: 16px; padding: 30px; margin-bottom: 40px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .form-group label { display: block; font-size: 12px; color: var(--primary-gold); margin-bottom: 6px; }
-        .form-group input { width: 100%; padding: 12px; background: #0a0805; border: 1px solid var(--card-border); border-radius: 8px; color: #fff; outline: none; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; background: #0a0805; border: 1px solid var(--card-border); border-radius: 8px; color: #fff; outline: none; }
         .form-group input[type="file"] { padding: 8px; cursor: pointer; color: var(--primary-gold); }
 
         .order-summary { display: flex; justify-content: space-between; align-items: center; background: #0a0805; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; border: 1px dashed var(--card-border); }
@@ -130,12 +137,13 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 20px;
         }
-        .modal-card { background: var(--card-bg); border: 1px solid var(--primary-gold); border-radius: 16px; width: 100%; max-width: 550px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-card { background: var(--card-bg); border: 1px solid var(--primary-gold); border-radius: 16px; width: 100%; max-width: 600px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
         .close-btn { position: absolute; top: 15px; left: 15px; color: var(--text-muted); cursor: pointer; font-size: 20px; }
 
         .admin-item-row { display: flex; justify-content: space-between; align-items: center; background: #0a0805; padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--card-border); }
         .admin-item-title { font-size: 14px; color: #fff; }
         .admin-del-btn { background: var(--danger-red); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .or-divider { text-align: center; color: var(--text-muted); font-size: 11px; margin: 5px 0; }
     </style>
 </head>
 <body>
@@ -216,15 +224,34 @@
             <div id="adminControls" style="display:none;">
                 <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم الشاملة</h3>
                 
-                <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة منتج جديد:</h4>
-                <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newProdName" placeholder="اسم المنتج"></div>
+                <!-- إضافة منتج جديد -->
+                <h4 style="color:#fff; font-size:13px; margin-bottom:8px;">إضافة منتج رئيسي جديد:</h4>
+                <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newProdName" placeholder="اسم المنتج الرئيسي (مثل: ارابيسك 5 ساعات)"></div>
                 <div class="form-group" style="margin-bottom:10px;"><input type="number" id="newProdPrice" placeholder="السعر بـ ج.م"></div>
-                <div class="form-group" style="margin-bottom:10px;">
-                    <label>اختر صورة المنتج (اختياري - ستوضع صورة افتراضية إن لم تختار):</label>
-                    <input type="file" id="newProdImgFile" accept="image/*">
-                </div>
-                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewProduct()">إضافة المنتج</button>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewProduct()">إضافة المنتج الرئيسي</button>
                 
+                <hr style="border-color:var(--card-border); margin-bottom:20px;">
+
+                <!-- إضافة نكها / نوع لمنتج موجود -->
+                <h4 style="color:#fff; font-size:13px; margin-bottom:8px;">إضافة نوع أو نكهة جديدة لمنتج:</h4>
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label>اختر المنتج المستهدف:</label>
+                    <select id="targetProductSelect"></select>
+                </div>
+                <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newVariantName" placeholder="اسم النوع أو النكهة (مثل: روح المسك 5 ساعات)"></div>
+                <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newVariantDesc" placeholder="وصف أو تفاصيل النوع"></div>
+                
+                <div class="form-group" style="margin-bottom:5px;">
+                    <label>صورة النوع (من المعرض):</label>
+                    <input type="file" id="newVariantImgFile" accept="image/*">
+                </div>
+                <div class="or-divider">- أو -</div>
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label>رابط صورة النوع (URL):</label>
+                    <input type="url" id="newVariantImgUrl" placeholder="https://example.com/musk.jpg">
+                </div>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewVariantToProduct()">إضافة النوع للمنتج</button>
+
                 <hr style="border-color:var(--card-border); margin-bottom:20px;">
 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إدارة وحذف المنتجات الحالية:</h4>
@@ -233,10 +260,9 @@
                 <hr style="border-color:var(--card-border); margin-bottom:20px;">
 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة صورة رأي عميل:</h4>
-                <div class="form-group" style="margin-bottom:10px;">
-                    <label>اختر صورة الرأي من المعرض:</label>
-                    <input type="file" id="newRevImgFile" accept="image/*">
-                </div>
+                <div class="form-group" style="margin-bottom:5px;"><input type="file" id="newRevImgFile" accept="image/*"></div>
+                <div class="or-divider">- أو -</div>
+                <div class="form-group" style="margin-bottom:15px;"><input type="url" id="newRevImgUrl" placeholder="رابط صورة الرأي URL"></div>
                 <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة صورة الرأي</button>
                 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إدارة وحذف آراء العملاء:</h4>
@@ -249,45 +275,64 @@
 
     <script>
         function initVisitors() {
-            let visitors = localStorage.getItem('elsheikh_visitor_count_v2');
+            let visitors = localStorage.getItem('elsheikh_visitor_count_v3');
             if (!visitors) {
                 visitors = 1;
             } else {
                 visitors = parseInt(visitors) + 1;
             }
-            localStorage.setItem('elsheikh_visitor_count_v2', visitors);
+            localStorage.setItem('elsheikh_visitor_count_v3', visitors);
             document.getElementById('visitorCount').innerText = visitors;
         }
 
         const defaultProducts = [
-            { id: 1, title: "تشكيلة أعواد البخور الفاخرة", price: 75, badge: "الأكثر مبيعاً", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["النوع الكلاسيكي", "روح المسك", "جذور العود"] },
-            { id: 2, title: "أعواد بخور ميني مركزة", price: 50, badge: "مميز", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["حجم ميني", "عبير الزهور"] },
-            { id: 3, title: "البخور القمع الهرمي الملكي", price: 70, badge: "فاخر", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["أقماع هرمية", "نفائس العنبر"] }
+            { 
+                id: 1, 
+                title: "ارابيسك 5 ساعات", 
+                price: 75, 
+                badge: "الأكثر مبيعاً", 
+                variants: [
+                    { name: "أعواد جالكسي (Galaxy Sticks)", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "تعطير يدوم حتى 5 ساعات كاملة بتركيز وثبات عالي جداً وقوة رائحة نفاذة." },
+                    { name: "أرابيسك كلاسيك الفاخر", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "خلطة شرقية أصلية من أفضل خشب العود المعطر." },
+                    { name: "روح المسك الملكي", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "رائحة النظافة والانتعاش بالمسك الصافي الهادئ." }
+                ]
+            }
         ];
 
-        let products = JSON.parse(localStorage.getItem('elsheikh_prods')) || defaultProducts;
-        let reviews = JSON.parse(localStorage.getItem('elsheikh_revs')) || [];
+        let products = JSON.parse(localStorage.getItem('elsheikh_prods_v3')) || defaultProducts;
+        let reviews = JSON.parse(localStorage.getItem('elsheikh_revs_v3')) || [];
         let quantities = {};
-        let selectedScents = {};
+        let selectedVariantIndexes = {};
 
         function renderProducts() {
             const grid = document.getElementById('productsGrid');
             grid.innerHTML = '';
             products.forEach(p => {
                 if(!quantities[p.id]) quantities[p.id] = 0;
-                if(!selectedScents[p.id]) selectedScents[p.id] = p.scents[0];
+                if(selectedVariantIndexes[p.id] === undefined) selectedVariantIndexes[p.id] = 0;
+                
+                let variantsList = p.variants && p.variants.length > 0 ? p.variants : [{ name: "النوع الأساسي", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "بخور فاخر." }];
+                if(selectedVariantIndexes[p.id] >= variantsList.length) selectedVariantIndexes[p.id] = 0;
+                let currentVariant = variantsList[selectedVariantIndexes[p.id]];
+
                 grid.innerHTML += `
                     <div class="product-card">
                         <div class="product-img-box">
-                            <img src="${p.img}">
+                            <img id="img-prod-${p.id}" src="${currentVariant.img}">
                             ${p.badge ? `<span class="badge-tag">${p.badge}</span>` : ''}
                         </div>
                         <div class="product-content">
                             <div class="product-name">${p.title}</div>
                             <div class="product-price">${p.price} ج.م</div>
-                            <select class="scent-dropdown" onchange="selectedScents[${p.id}]=this.value">
-                                ${p.scents.map(s => `<option value="${s}">${s}</option>`).join('')}
-                            </select>
+                            
+                            <div class="variant-box">
+                                <label class="variant-label">اختر النوع / النكهة:</label>
+                                <select class="scent-dropdown" onchange="changeProductVariant(${p.id}, this.value)">
+                                    ${variantsList.map((v, i) => `<option value="${i}" ${i == selectedVariantIndexes[p.id] ? 'selected' : ''}>${v.name}</option>`).join('')}
+                                </select>
+                                <div class="scent-desc" id="desc-prod-${p.id}">${currentVariant.desc}</div>
+                            </div>
+
                             <div class="qty-row">
                                 <button class="qty-btn" onclick="updateQty(${p.id}, -1)">-</button>
                                 <span class="qty-val" id="qty-${p.id}">${quantities[p.id]}</span>
@@ -298,6 +343,16 @@
                 `;
             });
             calcTotal();
+        }
+
+        function changeProductVariant(prodId, variantIdx) {
+            selectedVariantIndexes[prodId] = parseInt(variantIdx);
+            let p = products.find(item => item.id === prodId);
+            if(p && p.variants) {
+                let selected = p.variants[variantIdx];
+                document.getElementById(`img-prod-${prodId}`).src = selected.img;
+                document.getElementById(`desc-prod-${prodId}`).innerText = selected.desc;
+            }
         }
 
         function renderReviews() {
@@ -315,6 +370,9 @@
         function renderAdminLists() {
             const prodList = document.getElementById('adminProductList');
             prodList.innerHTML = '';
+            const targetSelect = document.getElementById('targetProductSelect');
+            targetSelect.innerHTML = '';
+
             products.forEach(p => {
                 prodList.innerHTML += `
                     <div class="admin-item-row">
@@ -322,6 +380,7 @@
                         <button class="admin-del-btn" onclick="deleteProduct(${p.id})">حذف</button>
                     </div>
                 `;
+                targetSelect.innerHTML += `<option value="${p.id}">${p.title}</option>`;
             });
 
             const revList = document.getElementById('adminReviewList');
@@ -338,14 +397,14 @@
 
         function deleteProduct(id) {
             products = products.filter(p => p.id !== id);
-            localStorage.setItem('elsheikh_prods', JSON.stringify(products));
+            localStorage.setItem('elsheikh_prods_v3', JSON.stringify(products));
             renderProducts();
             renderAdminLists();
         }
 
         function deleteReview(id) {
             reviews = reviews.filter(r => r.id !== id);
-            localStorage.setItem('elsheikh_revs', JSON.stringify(reviews));
+            localStorage.setItem('elsheikh_revs_v3', JSON.stringify(reviews));
             renderReviews();
             renderAdminLists();
         }
@@ -375,7 +434,8 @@
                     hasItems = true;
                     let t = q * p.price;
                     total += t;
-                    text += `• ${p.title} (${selectedScents[p.id]}) - الكمية: ${q} | السعر: ${t} ج.م\n`;
+                    let vName = p.variants && p.variants[selectedVariantIndexes[p.id]] ? p.variants[selectedVariantIndexes[p.id]].name : 'النوع الأساسي';
+                    text += `• ${p.title} (${vName}) - الكمية: ${q} | السعر: ${t} ج.م\n`;
                 }
             });
             if(!hasItems) { alert('برجاء اختيار كمية المنتجات أولاً'); return; }
@@ -405,57 +465,94 @@
         }
 
         function addNewProduct() {
-            const name = document.getElementById('newProdName').value;
+            const name = document.getElementById('newProdName').value.trim();
             const price = parseFloat(document.getElementById('newProdPrice').value);
-            const fileInput = document.getElementById('newProdImgFile');
 
             if(!name || isNaN(price)) {
                 alert('برجاء كتابة اسم المنتج والسعر بشكل صحيح.');
                 return;
             }
 
+            products.push({
+                id: Date.now(),
+                title: name,
+                price: price,
+                badge: "جديد",
+                variants: [
+                    { name: "النوع الأساسي", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "بخور فاخر ومميز." }
+                ]
+            });
+            localStorage.setItem('elsheikh_prods_v3', JSON.stringify(products));
+            renderProducts();
+            renderAdminLists();
+            alert('تمت إضافة المنتج بنجاح!');
+            document.getElementById('newProdName').value = '';
+            document.getElementById('newProdPrice').value = '';
+        }
+
+        function addNewVariantToProduct() {
+            const prodId = parseInt(document.getElementById('targetProductSelect').value);
+            const varName = document.getElementById('newVariantName').value.trim();
+            const varDesc = document.getElementById('newVariantDesc').value.trim() || "بخور أصيل عالي الجودة.";
+            const fileInput = document.getElementById('newVariantImgFile');
+            const urlInput = document.getElementById('newVariantImgUrl').value.trim();
+
+            if(!varName) {
+                alert('برجاء كتابة اسم النوع أو النكهة.');
+                return;
+            }
+
             const defaultImg = "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
+
+            let saveVariant = (imgUrl) => {
+                let p = products.find(item => item.id === prodId);
+                if(p) {
+                    if(!p.variants) p.variants = [];
+                    p.variants.push({ name: varName, img: imgUrl, desc: varDesc });
+                    localStorage.setItem('elsheikh_prods_v3', JSON.stringify(products));
+                    renderProducts();
+                    renderAdminLists();
+                    alert('تمت إضافة النكهة أو النوع الجديد بنجاح!');
+                    document.getElementById('newVariantName').value = '';
+                    document.getElementById('newVariantDesc').value = '';
+                    document.getElementById('newVariantImgUrl').value = '';
+                    fileInput.value = '';
+                }
+            };
 
             if(fileInput.files && fileInput.files[0]) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    products.push({ id: Date.now(), title: name, price: price, img: e.target.result, scents: ["عامة"] });
-                    localStorage.setItem('elsheikh_prods', JSON.stringify(products));
-                    renderProducts();
-                    renderAdminLists();
-                    alert('تمت إضافة المنتج بنجاح!');
-                    document.getElementById('newProdName').value = '';
-                    document.getElementById('newProdPrice').value = '';
-                    fileInput.value = '';
-                };
+                reader.onload = function(e) { saveVariant(e.target.result); };
                 reader.readAsDataURL(fileInput.files[0]);
+            } else if(urlInput !== '') {
+                saveVariant(urlInput);
             } else {
-                products.push({ id: Date.now(), title: name, price: price, img: defaultImg, scents: ["عامة"] });
-                localStorage.setItem('elsheikh_prods', JSON.stringify(products));
-                renderProducts();
-                renderAdminLists();
-                alert('تمت إضافة المنتج بنجاح بصورة افتراضية!');
-                document.getElementById('newProdName').value = '';
-                document.getElementById('newProdPrice').value = '';
+                saveVariant(defaultImg);
             }
         }
 
         function addNewReview() {
             const fileInput = document.getElementById('newRevImgFile');
+            const urlInput = document.getElementById('newRevImgUrl').value.trim();
+
+            let addRev = (imgUrl) => {
+                reviews.push({ id: Date.now(), img: imgUrl });
+                localStorage.setItem('elsheikh_revs_v3', JSON.stringify(reviews));
+                renderReviews();
+                renderAdminLists();
+                alert('تمت إضافة صورة الرأي بنجاح!');
+                fileInput.value = '';
+                document.getElementById('newRevImgUrl').value = '';
+            };
 
             if(fileInput.files && fileInput.files[0]) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    reviews.push({ id: Date.now(), img: e.target.result });
-                    localStorage.setItem('elsheikh_revs', JSON.stringify(reviews));
-                    renderReviews();
-                    renderAdminLists();
-                    alert('تمت إضافة صورة الرأي بنجاح!');
-                    fileInput.value = '';
-                };
+                reader.onload = function(e) { addRev(e.target.result); };
                 reader.readAsDataURL(fileInput.files[0]);
+            } else if(urlInput !== '') {
+                addRev(urlInput);
             } else {
-                alert('برجاء اختيار صورة الرأي من المعرض أولاً.');
+                alert('برجاء اختيار صورة من المعرض أو إضافة رابط الصورة أولاً.');
             }
         }
 
