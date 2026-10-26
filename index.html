@@ -301,9 +301,11 @@
                 });
                 if(res.ok) {
                     let data = await res.json();
-                    if(data.record) {
-                        if(data.record.products && data.record.products.length > 0) products = data.record.products;
+                    if(data.record && data.record.products && data.record.products.length > 0) {
+                        products = data.record.products;
                         if(data.record.reviews) reviews = data.record.reviews;
+                    } else {
+                        await saveCloudData();
                     }
                 }
             } catch(e) { console.log("Cloud load fallback"); }
