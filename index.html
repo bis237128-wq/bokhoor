@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بخور الشيخ | بخور أرابيسك أعواد تدوم ٥ ساعات</title>
+    <title>بخور الشيخ | تشكيلة البخور الفاخر والأنواع الأصلية</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -79,7 +79,7 @@
             background: rgba(201, 168, 76, 0.03);
         }
         .hero-title {
-            font-size: 46px; font-weight: 900; color: var(--primary-gold);
+            font-size: 42px; font-weight: 900; color: var(--primary-gold);
             margin-bottom: 15px; line-height: 1.3;
         }
         .hero-subtitle { font-size: 16px; color: var(--text-muted); max-width: 650px; margin: 0 auto; }
@@ -154,7 +154,7 @@
         <i class="fa-solid fa-users"></i>
         <div class="visitor-info">
             <span>زوار المتجر</span>
-            <strong id="visitorCount">108</strong>
+            <strong id="visitorCount">1</strong>
         </div>
     </div>
 
@@ -162,7 +162,7 @@
         <div class="hero-badge">
             <i class="fa-solid fa-sparkles" style="color:var(--primary-gold)"></i> صناعة عربية أصيلة منذ الأزل
         </div>
-        <h2 class="hero-title">بخور أرابيسك<br>أعواد تدوم ٥ ساعات</h2>
+        <h2 class="hero-title">تشكيلة بخور الشيخ<br>والأنواع الفاخرة</h2>
         <p class="hero-subtitle">منتجات مختارة بعناية تصلك حتى باب بيتك. أجود أنواع العود والمسك والعنبر</p>
     </section>
 
@@ -194,7 +194,7 @@
         </div>
     </div>
 
-    <!-- Admin Panel Modal (Simplified) -->
+    <!-- Admin Panel Modal -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-card">
             <i class="fa-solid fa-xmark close-btn" onclick="closeAdminModal()"></i>
@@ -236,16 +236,20 @@
 
     <script>
         function initVisitors() {
-            let visitors = localStorage.getItem('elsheikh_visitor_count') || 108;
-            visitors = parseInt(visitors) + 1;
+            let visitors = localStorage.getItem('elsheikh_visitor_count');
+            if (!visitors) {
+                visitors = 1;
+            } else {
+                visitors = parseInt(visitors) + 1;
+            }
             localStorage.setItem('elsheikh_visitor_count', visitors);
             document.getElementById('visitorCount').innerText = visitors;
         }
 
         const defaultProducts = [
-            { id: 1, title: "بخور أرابيسك أعواد 5 ساعات", price: 75, badge: "الأكثر مبيعاً", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["أرابيسك كلاسيك", "روح المسك", "جذور العود"] },
-            { id: 2, title: "بخور أرابيسك أعواد 3 ساعات (ميني)", price: 50, badge: "مميز", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["أرابيسك ميني", "عبير الورد"] },
-            { id: 3, title: "البخور القمع الهرمي", price: 70, badge: "فاخر", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["أقماع هرمية", "نفائس العنبر"] }
+            { id: 1, title: "تشكيلة أعواد البخور الفاخرة", price: 75, badge: "الأكثر مبيعاً", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["النوع الكلاسيكي", "روح المسك", "جذور العود"] },
+            { id: 2, title: "أعواد بخور ميني مركزة", price: 50, badge: "مميز", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["حجم ميني", "عبير الزهور"] },
+            { id: 3, title: "البخور القمع الهرمي الملكي", price: 70, badge: "فاخر", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["أقماع هرمية", "نفائس العنبر"] }
         ];
 
         let products = JSON.parse(localStorage.getItem('elsheikh_prods')) || defaultProducts;
@@ -361,7 +365,7 @@
             if(fileInput.files && fileInput.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    products.push({ id: Date.now(), title: name, price: price, img: e.target.result, scents: ["أصلية"] });
+                    products.push({ id: Date.now(), title: name, price: price, img: e.target.result, scents: ["عامة"] });
                     localStorage.setItem('elsheikh_prods', JSON.stringify(products));
                     renderProducts();
                     alert('تمت إضافة المنتج بنجاح!');
@@ -369,7 +373,7 @@
                 };
                 reader.readAsDataURL(fileInput.files[0]);
             } else {
-                products.push({ id: Date.now(), title: name, price: price, img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["أصلية"] });
+                products.push({ id: Date.now(), title: name, price: price, img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["عامة"] });
                 localStorage.setItem('elsheikh_prods', JSON.stringify(products));
                 renderProducts();
                 alert('تمت إضافة المنتج بنجاح!');
