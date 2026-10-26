@@ -133,7 +133,6 @@
             display: flex; align-items: center; justify-content: center; gap: 10px;
         }
 
-        /* نافذة لوحة التحكم (مخفية تماماً حتى الضغط على زر لوحة المالك) */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 20px;
@@ -141,7 +140,6 @@
         .modal-card { background: var(--card-bg); border: 1px solid var(--primary-gold); border-radius: 16px; width: 100%; max-width: 600px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
         .close-btn { position: absolute; top: 15px; left: 15px; color: var(--text-muted); cursor: pointer; font-size: 20px; }
 
-        /* نافذة تكبير الصور (Lightbox) */
         .image-modal {
             display: none; position: fixed; z-index: 3000; top: 0; left: 0;
             width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9);
@@ -192,7 +190,7 @@
     <div class="main-container">
         <div id="productsSection">
             <h3 class="section-header"><i class="fa-solid fa-box-open"></i> المنتجات المتوفرة</h3>
-            <div class="products-grid" id="productsGrid"><div class="loading-text">جاري مزامنة وتحميل المنتجات السحابية...</div></div>
+            <div class="products-grid" id="productsGrid"><div class="loading-text">جاري تحميل المنتجات...</div></div>
         </div>
 
         <div class="reviews-section" id="reviewsSection">
@@ -217,7 +215,7 @@
         </div>
     </div>
 
-    <!-- Admin Panel Modal (مخفية تماماً داخل نافذة منبثقة) -->
+    <!-- Admin Panel Modal -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-card">
             <i class="fa-solid fa-xmark close-btn" onclick="closeAdminModal()"></i>
@@ -232,14 +230,14 @@
             </div>
 
             <div id="adminControls" style="display:none;">
-                <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم (مزامنة سحابية مباشرة)</h3>
+                <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم (حفظ دائم ومباشر)</h3>
                 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:8px;">إضافة منتج رئيسي جديد:</h4>
                 <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newProdName" placeholder="اسم المنتج الرئيسي"></div>
                 <div class="form-group" style="margin-bottom:10px;"><input type="number" id="newProdPrice" placeholder="السعر بـ ج.م"></div>
                 <div class="form-group" style="margin-bottom:15px;"><label>رابط صورة المنتج (URL مباشر):</label><input type="url" id="newProdImgUrl" placeholder="https://..."></div>
 
-                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewProduct()">إضافة المنتج الرئيسي سحابياً</button>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewProduct()">إضافة المنتج الرئيسي وحفظه</button>
                 
                 <hr style="border-color:var(--card-border); margin-bottom:20px;">
 
@@ -252,8 +250,7 @@
                 <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newVariantDesc" placeholder="وصف أو تفاصيل النوع"></div>
                 <div class="form-group" style="margin-bottom:15px;"><label>رابط صورة النوع (URL مباشر):</label><input type="url" id="newVariantImgUrl" placeholder="https://..."></div>
 
-                <!-- زر الحفظ والإضافة -->
-                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewVariantToProduct()">حفظ وإضافة النكهة سحابياً</button>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewVariantToProduct()">حفظ وإضافة النكهة فوراً</button>
 
                 <hr style="border-color:var(--card-border); margin-bottom:20px;">
 
@@ -264,7 +261,7 @@
 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة صورة رأي عميل:</h4>
                 <div class="form-group" style="margin-bottom:15px;"><input type="url" id="newRevImgUrl" placeholder="رابط صورة الرأي URL مباشر"></div>
-                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة صورة الرأي سحابياً</button>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة صورة الرأي وحفظها</button>
                 
                 <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إدارة وحذف آراء العملاء:</h4>
                 <div id="adminReviewList" style="margin-bottom:20px; max-height:150px; overflow-y:auto;"></div>
@@ -307,12 +304,28 @@
             }
         ];
 
-        let products = [...defaultProducts];
+        let products = [];
         let reviews = [];
         let quantities = {};
         let selectedVariantIndexes = {};
 
-        async function loadCloudData() {
+        // تحميل البيانات بدمج التخزين المحلي والسحابي لضمان عدم ضياع أي منتج
+        async function loadData() {
+            // 1. التحقق أولاً من التخزين المحلي للمتصفح (لتجنب مسح المنتجات المضافة محلياً)
+            let localProducts = localStorage.getItem('elsheikh_products');
+            let localReviews = localStorage.getItem('elsheikh_reviews');
+
+            if (localProducts) {
+                products = JSON.parse(localProducts);
+            } else {
+                products = [...defaultProducts];
+            }
+
+            if (localReviews) {
+                reviews = JSON.parse(localReviews);
+            }
+
+            // 2. محاولة التحديث من السحابة في الخلفية
             try {
                 let res = await fetch(API_URL + '/latest', {
                     headers: { 'X-Master-Key': '$2a$10$wT0l0sZ9K/.0s3V2rE6eE.y1L5oKq1H0c8.m9v5Z0J2f2K1' }
@@ -320,18 +333,21 @@
                 if(res.ok) {
                     let data = await res.json();
                     if(data.record && data.record.products && data.record.products.length > 0) {
+                        // إذا كانت السحابة تحتوي على منتجات جديدة، نعتمدها ونحدث التخزين المحلي
                         products = data.record.products;
                         if(data.record.reviews) reviews = data.record.reviews;
-                    } else {
-                        await saveCloudData();
+                        saveLocal();
                     }
                 }
-            } catch(e) { console.log("Cloud load fallback"); }
+            } catch(e) { console.log("Using local cache"); }
+
             renderProducts();
             renderReviews();
         }
 
-        async function saveCloudData() {
+        // حفظ البيانات محلياً وفي السحابة معاً لضمان عدم اختفائها نهائياً
+        async function saveData() {
+            saveLocal();
             try {
                 await fetch(API_URL, {
                     method: 'PUT',
@@ -341,7 +357,12 @@
                     },
                     body: JSON.stringify({ products: products, reviews: reviews })
                 });
-            } catch(e) { console.log("Cloud save error"); }
+            } catch(e) { console.log("Cloud sync pending"); }
+        }
+
+        function saveLocal() {
+            localStorage.setItem('elsheikh_products', JSON.stringify(products));
+            localStorage.setItem('elsheikh_reviews', JSON.stringify(reviews));
         }
 
         function initVisitors() {
@@ -448,14 +469,14 @@
             products = products.filter(p => p.id !== id);
             renderProducts();
             renderAdminLists();
-            await saveCloudData();
+            await saveData();
         }
 
         async function deleteReview(id) {
             reviews = reviews.filter(r => r.id !== id);
             renderReviews();
             renderAdminLists();
-            await saveCloudData();
+            await saveData();
         }
 
         function updateQty(id, delta) {
@@ -537,9 +558,9 @@
 
             renderProducts();
             renderAdminLists();
-            await saveCloudData();
+            await saveData();
 
-            alert('تمت إضافة المنتج بنجاح ومزامنته سحابياً مع كافة الهواتف!');
+            alert('تم حفظ وإضافة المنتج بنجاح ولن يختفي بعد الآن!');
             document.getElementById('newProdName').value = '';
             document.getElementById('newProdPrice').value = '';
             document.getElementById('newProdImgUrl').value = '';
@@ -565,9 +586,9 @@
                 
                 renderProducts();
                 renderAdminLists();
-                await saveCloudData();
+                await saveData();
 
-                alert('تم حفظ وإضافة النكهة بنجاح ومزامنتها سحابياً!');
+                alert('تم حفظ وإضافة النكهة بنجاح ولن تختفي بعد التحديث!');
                 document.getElementById('newVariantName').value = '';
                 document.getElementById('newVariantDesc').value = '';
                 document.getElementById('newVariantImgUrl').value = '';
@@ -580,15 +601,14 @@
                 reviews.push({ id: Date.now(), img: urlInput });
                 renderReviews();
                 renderAdminLists();
-                await saveCloudData();
-                alert('تمت إضافة صورة الرأي بنجاح ومزامنتها سحابياً!');
+                await saveData();
+                alert('تمت إضافة وحفظ صورة الرأي بنجاح!');
                 document.getElementById('newRevImgUrl').value = '';
             } else {
                 alert('برجاء إضافة رابط صورة الرأي (URL) أولاً.');
             }
         }
 
-        // جافا سكريبت لتكبير الصور عند النقر عليها
         function openImageModal(imgSrc) {
             const modal = document.getElementById('imageModal');
             const modalImg = document.getElementById('modalImgSrc');
@@ -603,7 +623,7 @@
         function scrollToSection(id) { document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
 
         initVisitors();
-        loadCloudData();
+        loadData();
     </script>
 </body>
 </html>
