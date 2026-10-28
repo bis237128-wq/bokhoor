@@ -249,7 +249,7 @@
                 <div class="form-group" style="margin-bottom:10px;"><input type="number" id="newProdPrice" placeholder="السعر بـ ج.م"></div>
                 <div class="form-group" style="margin-bottom:15px;"><label>رابط صورة المنتج (URL مباشر):</label><input type="url" id="newProdImgUrl" placeholder="https://..."></div>
 
-                <button class="submit-btn" id="saveProdBtn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewProduct()">إضافة المنتج سحابياً</button>
+                <button class="submit-btn" id="saveProdBtn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="saveProductAction()">إضافة المنتج سحابياً</button>
                 <button class="submit-btn" id="cancelEditBtn" style="background:#444; color:#fff; margin-bottom:20px; display:none;" onclick="resetProductForm()">إلغاء التعديل</button>
                 
                 <hr style="border-color:var(--card-border); margin-bottom:20px;">
@@ -324,7 +324,7 @@
         let reviews = [];
         let quantities = {};
         let selectedVariantIndexes = {};
-        let editingProductId = null; // متغير لمتابعة المنتج المراد تعديله
+        let editingProductId = null; // لتخزين معرف المنتج المراد تعديله
 
         window.onload = function() {
             registerVisitorIP();
@@ -431,7 +431,7 @@
 
         function changeProductVariant(prodId, variantIdx) {
             selectedVariantIndexes[prodId] = parseInt(variantIdx);
-            let p = products.find(item => item.id === prodId);
+            let p = products.find(item => item.id == prodId);
             if(p && p.variants) {
                 let selected = p.variants[variantIdx];
                 let imgElement = document.getElementById(`img-prod-${prodId}`);
@@ -464,8 +464,8 @@
                     <div class="admin-item-row">
                         <span class="admin-item-title">${p.title} (${p.price} ج.م)</span>
                         <div class="admin-actions-btns">
-                            <button class="admin-edit-btn" onclick="editProduct(${p.id})">تعديل</button>
-                            <button class="admin-del-btn" onclick="deleteProduct(${p.id})">حذف</button>
+                            <button class="admin-edit-btn" onclick="prepareEditProduct('${p.id}')">تعديل</button>
+                            <button class="admin-del-btn" onclick="deleteProduct('${p.id}')">حذف</button>
                         </div>
                     </div>
                 `;
@@ -478,16 +478,16 @@
                 revList.innerHTML += `
                     <div class="admin-item-row">
                         <span class="admin-item-title">صورة رأي عميل #${index + 1}</span>
-                        <button class="admin-del-btn" onclick="deleteReview(${r.id})">حذف</button>
+                        <button class="admin-del-btn" onclick="deleteReview('${r.id}')">حذف</button>
                     </div>
                 `;
             });
         }
 
-        function editProduct(id) {
-            let p = products.find(item => item.id === id);
+        function prepareEditProduct(id) {
+            let p = products.find(item => item.id == id);
             if(p) {
-                editingProductId = id;
+                editingProductId = p.id;
                 document.getElementById('newProdName').value = p.title;
                 document.getElementById('newProdPrice').value = p.price;
                 document.getElementById('newProdImgUrl').value = (p.variants && p.variants[0]) ? p.variants[0].img : '';
@@ -508,7 +508,7 @@
             document.getElementById('cancelEditBtn').style.display = 'none';
         }
 
-        async function addNewProduct() {
+        async function saveProductAction() {
             const name = document.getElementById('newProdName').value.trim();
             const price = parseFloat(document.getElementById('newProdPrice').value);
             const urlInput = document.getElementById('newProdImgUrl').value.trim();
@@ -520,9 +520,9 @@
 
             const defaultImg = urlInput !== '' ? urlInput : "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
 
-            // في حالة التعديل
+            // إذا كنا في وضع التعديل
             if (editingProductId !== null) {
-                let p = products.find(item => item.id === editingProductId);
+                let p = products.find(item => item.id == editingProductId);
                 if (p) {
                     p.title = name;
                     p.price = price;
@@ -550,7 +550,7 @@
                 return;
             }
 
-            // في حالة إضافة منتج جديد
+            // إذا كنا نضيف منتج جديد
             const newProd = {
                 id: Date.now(),
                 title: name,
@@ -576,8 +576,8 @@
         async function deleteProduct(id) {
             let { error } = await supabaseClient.from('products').delete().eq('id', id);
             if(!error) {
-                products = products.filter(p => p.id !== id);
-                if (editingProductId === id) resetProductForm();
+                products = products.filter(p => p.id != id);
+                if (editingProductId == id) resetProductForm();
                 renderProducts();
                 renderAdminLists();
                 alert('تم حذف المنتج سحابياً بنجاح!');
@@ -589,7 +589,7 @@
         async function deleteReview(id) {
             let { error } = await supabaseClient.from('reviews').delete().eq('id', id);
             if(!error) {
-                reviews = reviews.filter(r => r.id !== id);
+                reviews = reviews.filter(r => r.id != id);
                 renderReviews();
                 renderAdminLists();
                 alert('تم حذف صورة الرأي سحابياً بنجاح!');
@@ -677,7 +677,7 @@
 
             const defaultImg = urlInput !== '' ? urlInput : "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
 
-            let p = products.find(item => item.id === prodId);
+            let p = products.find(item => item.id == prodId);
             if(p) {
                 if(!p.variants) p.variants = [];
                 p.variants.push({ name: varName, img: defaultImg, desc: varDesc });
