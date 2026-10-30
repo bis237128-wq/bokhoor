@@ -713,13 +713,12 @@
                 return; 
             }
 
-            // تعطيل زر الإرسال لمنع التكرار
             const submitBtn = document.getElementById('submitOrderBtn');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري إرسال وحفظ الطلب...';
 
             try {
-                // حفظ الطلب في Supabase
+                // حفظ الطلب في Supabase (وهو ما يقوم بدوره بإرسال الـ Webhook إلى Make تلقائياً)
                 const { error } = await supabaseClient
                     .from('orders')
                     .insert([
@@ -741,7 +740,7 @@
                     return;
                 }
 
-                // خصم المخزون
+                // خصم المخزون من قاعدة البيانات
                 for (let item of orderedItemsList) {
                     let updatedStock = Math.max(0, item.currentStock - item.orderedQty);
                     let pObj = products.find(p => p.id == item.productId);
@@ -767,7 +766,6 @@
             } catch (err) {
                 console.log(err);
             } finally {
-                // إعادة تفعيل الزر بعد لحظات
                 setTimeout(() => {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> تأكيد الطلب المباشر عبر الواتساب';
