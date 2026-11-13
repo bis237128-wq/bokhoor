@@ -722,12 +722,14 @@
                 return; 
             }
 
-            // WhatsApp expects an international number without + or leading 00.
-            let whatsappNumber = phone.replace(/\D/g, '');
-            if (whatsappNumber.startsWith('00')) {
-                whatsappNumber = whatsappNumber.slice(2);
-            } else if (whatsappNumber.startsWith('0')) {
-                whatsappNumber = `20${whatsappNumber.slice(1)}`;
+            // Send the order to the store admin; keep the customer's normalized
+            // phone in the Make payload for customer notifications.
+            const adminWhatsAppNumber = '201278771472';
+            let customerWhatsAppNumber = phone.replace(/\D/g, '');
+            if (customerWhatsAppNumber.startsWith('00')) {
+                customerWhatsAppNumber = customerWhatsAppNumber.slice(2);
+            } else if (customerWhatsAppNumber.startsWith('0')) {
+                customerWhatsAppNumber = `20${customerWhatsAppNumber.slice(1)}`;
             }
 
             const submitBtn = document.getElementById('submitOrderBtn');
@@ -768,7 +770,7 @@
 
                 const makeOrderPayload = {
                     customer_name: name,
-                    customer_phone: whatsappNumber,
+                    customer_phone: customerWhatsAppNumber,
                     customer_phone_input: phone,
                     customer_address: address,
                     products: webhookProducts,
@@ -817,20 +819,19 @@
                         .eq('id', item.productId);
                 }
 
-                let text = `✨ تم استلام طلبك من متجر بخور الشيخ ✨\n\n` +
+                let text = `✨ طلب جديد من متجر بخور الشيخ ✨\n\n` +
                            `👤 الاسم: ${name}\n` +
                            `📱 الهاتف: ${phone}\n` +
                            `📍 العنوان: ${address}\n\n` +
                            `الطلبات:\n${cartDetailsSummary}\n` +
                            `📦 إجمالي القطع المطلوبة: ${totalItems}\n` +
-                           `💰 الإجمالي الكلي: ${total} جنيه مصري\n\n` +
-                           `يرجى إرسال هذه الرسالة لتأكيد استلام طلبك.`;
+                           `💰 الإجمالي الكلي: ${total} جنيه مصري`;
 
-                const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
+                const whatsappUrl = `https://wa.me/${adminWhatsAppNumber}?text=${encodeURIComponent(text)}`;
                 if (whatsappWindow) {
                     whatsappWindow.location.href = whatsappUrl;
                 } else {
-                    console.error('WhatsApp confirmation could not open because the browser blocked the new tab.');
+                    console.error('Store WhatsApp order message could not open because the browser blocked the new tab.');
                 }
 
             } catch (err) {
