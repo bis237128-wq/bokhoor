@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بخور الشيخ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-gold: #c9a84c;
+            --bg-dark: #0a0805;
+            --card-bg: #13100b;
+            --card-border: rgba(201, 168, 76, 0.2);
+            --text-white: #ffffff;
+            --text-muted: #a1998e;
+            --whatsapp-green: #25D366;
+            --danger-red: #ff4d4d;
+            --info-blue: #3182ce;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-white);
+            line-height: 1.6;
+            padding-bottom: 60px;
+        }
+
+        header {
+            background-color: rgba(15, 12, 8, 0.95);
+            border-bottom: 1px solid var(--card-border);
+            padding: 15px 30px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-container { display: flex; align-items: center; gap: 15px; }
+
+        .brand-logo-circle {
+            width: 45px; height: 45px;
+            background: linear-gradient(135deg, #c9a84c 0%, #8c7128 100%);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #000; font-weight: 900; font-size: 22px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .brand-title-box { cursor: pointer; user-select: none; }
+        .brand-title-box h1 { font-size: 22px; font-weight: 800; color: var(--primary-gold); }
+        .brand-title-box p { font-size: 11px; color: var(--text-muted); }
+
+        .nav-links-right { display: flex; align-items: center; gap: 20px; }
+        .nav-link { color: var(--text-white); text-decoration: none; font-size: 14px; cursor: pointer; }
+        .nav-link:hover { color: var(--primary-gold); }
+
+        .share-site-btn {
+            background: rgba(201, 168, 76, 0.1); border: 1px solid var(--primary-gold);
+            color: var(--primary-gold); padding: 7px 15px; border-radius: 20px;
+            font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;
+        }
+        .share-site-btn:hover { background: var(--primary-gold); color: #000; }
+
+        .hero-section { text-align: center; padding: 70px 20px 50px; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            border: 1px solid var(--card-border); padding: 8px 22px; border-radius: 30px;
+            font-size: 14px; color: var(--text-muted); margin-bottom: 25px;
+            background: rgba(201, 168, 76, 0.03);
+        }
+        .hero-title {
+            font-size: 42px; font-weight: 900; color: var(--primary-gold);
+            margin-bottom: 15px; line-height: 1.3;
+        }
+        .hero-subtitle { font-size: 16px; color: var(--text-muted); max-width: 650px; margin: 0 auto; }
+
+        .main-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+        .section-header { font-size: 24px; font-weight: 800; color: var(--primary-gold); margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
+
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; margin-bottom: 60px; }
+        .product-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+        .product-img-box { position: relative; width: 100%; height: 320px; background-color: #050403; display: flex; align-items: center; justify-content: center; }
+        .product-img-box img { width: 100%; height: 100%; object-fit: contain; padding: 10px; transition: all 0.3s ease; cursor: pointer; }
+        .product-img-box img:hover { transform: scale(1.03); filter: brightness(1.1); }
+        .badge-tag { position: absolute; top: 15px; right: 15px; background: #c9a84c; color: #000; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 12px; z-index: 2; }
+        .product-content { padding: 20px; display: flex; flex-direction: column; flex-grow: 1; }
+        .product-name { font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+        .product-price { font-size: 18px; font-weight: 800; color: var(--primary-gold); margin-bottom: 12px; }
+        
+        .variant-box { margin-bottom: 15px; }
+        .variant-label { font-size: 12px; color: var(--primary-gold); margin-bottom: 5px; display: block; font-weight: bold; }
+        .scent-dropdown {
+            width: 100%; padding: 12px; background-color: #0a0805;
+            border: 1px solid var(--primary-gold); border-radius: 8px; color: #fff;
+            outline: none; cursor: pointer; font-weight: bold; font-size: 14px;
+        }
+        .scent-desc {
+            font-size: 12px; color: var(--text-muted); background: #080604;
+            padding: 10px; border-radius: 6px; border-right: 3px solid var(--primary-gold);
+            margin-top: 8px; min-height: 45px;
+        }
+
+        .qty-row { display: flex; align-items: center; justify-content: space-between; background: #0a0805; border: 1px solid var(--card-border); border-radius: 8px; padding: 4px; margin-top: auto; }
+        .qty-btn { background: #1a1610; color: var(--primary-gold); border: none; width: 35px; height: 35px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .qty-val { font-weight: bold; color: #fff; font-size: 16px; }
+
+        .reviews-section { margin-bottom: 60px; }
+        .reviews-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .review-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden; position: relative; }
+        .review-card img { width: 100%; height: 280px; object-fit: cover; display: block; cursor: pointer; }
+
+        .order-box { background: var(--card-bg); border: 1px solid var(--primary-gold); border-radius: 16px; padding: 30px; margin-bottom: 40px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 12px; color: var(--primary-gold); margin-bottom: 6px; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; background: #0a0805; border: 1px solid var(--card-border); border-radius: 8px; color: #fff; outline: none; }
+
+        .order-summary { display: flex; justify-content: space-between; align-items: center; background: #0a0805; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; border: 1px dashed var(--card-border); }
+        
+        .submit-btn {
+            width: 100%; background: var(--whatsapp-green); color: #fff; border: none;
+            padding: 15px; border-radius: 10px; font-size: 17px; font-weight: 800; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .submit-btn:disabled { background: #555; cursor: not-allowed; opacity: 0.7; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 20px;
+        }
+        .modal-card { background: var(--card-bg); border: 1px solid var(--primary-gold); border-radius: 16px; width: 100%; max-width: 650px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .close-btn { position: absolute; top: 15px; left: 15px; color: var(--text-muted); cursor: pointer; font-size: 20px; }
+
+        .admin-stat-card {
+            background: rgba(201, 168, 76, 0.1);
+            border: 1px solid var(--primary-gold);
+            border-radius: 12px;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .admin-stat-card .stat-info span { font-size: 12px; color: var(--text-muted); display: block; }
+        .admin-stat-card .stat-info strong { font-size: 26px; color: var(--primary-gold); font-weight: 900; }
+        .admin-stat-card i { font-size: 30px; color: var(--primary-gold); }
+
+        .image-modal {
+            display: none; position: fixed; z-index: 3000; top: 0; left: 0;
+            width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center; align-items: center;
+        }
+        .image-modal img { max-width: 90%; max-height: 85%; border-radius: 8px; box-shadow: 0 0 25px rgba(212, 175, 55, 0.4); }
+        .image-modal .close-img-btn { position: absolute; top: 20px; left: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; }
+
+        .admin-item-box { background: #0a0805; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--card-border); }
+        .admin-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .admin-item-title { font-size: 15px; font-weight: bold; color: var(--primary-gold); }
+        .admin-variants-sublist { font-size: 12px; color: var(--text-muted); margin-right: 10px; margin-bottom: 8px; border-right: 2px solid var(--primary-gold); padding-right: 8px; }
+        .admin-actions-btns { display: flex; gap: 8px; }
+        .admin-del-btn { background: var(--danger-red); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .admin-edit-btn { background: var(--info-blue); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .loading-text { text-align: center; color: var(--primary-gold); font-size: 14px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-container">
+            <div class="brand-logo-circle" ondblclick="openAdminModal()" title="بخور الشيخ">ب</div>
+            <div class="brand-title-box" ondblclick="openAdminModal()">
+                <h1>بخور الشيخ</h1>
+                <p>عطور وبخور فاخر بلمسة أصلية</p>
+            </div>
+        </div>
+        <div class="nav-links-right">
+            <a class="nav-link" onclick="scrollToSection('productsSection')">المنتجات</a>
+            <a class="nav-link" onclick="scrollToSection('reviewsSection')">آراء العملاء</a>
+            <button class="share-site-btn" onclick="copySiteLink()"><i class="fa-solid fa-share-nodes"></i> مشاركة الموقع</button>
+        </div>
+    </header>
+
+    <section class="hero-section">
+        <div class="hero-badge">
+            <i class="fa-solid fa-sparkles" style="color:var(--primary-gold)"></i> صناعة عربية أصيلة منذ الأزل
+        </div>
+        <h2 class="hero-title">بخور الشيخ</h2>
+        <p class="hero-subtitle">منتجات مختارة بعناية تصلك حتى باب بيتك. أجود أنواع العود والمسك والعنبر</p>
+    </section>
+
+    <div class="main-container">
+        <div id="productsSection">
+            <h3 class="section-header"><i class="fa-solid fa-box-open"></i> المنتجات المتوفرة</h3>
+            <div class="products-grid" id="productsGrid"><div class="loading-text">جاري مزامنة المنتجات سحابياً...</div></div>
+        </div>
+
+        <div class="reviews-section" id="reviewsSection">
+            <h3 class="section-header"><i class="fa-solid fa-comments"></i> آراء العملاء</h3>
+            <div class="reviews-grid" id="reviewsGrid"></div>
+        </div>
+
+        <div class="order-box" id="orderBox">
+            <h3 class="section-header" style="margin-bottom:15px;"><i class="fa-solid fa-file-invoice"></i> إتمام الطلب الشحن والتوصيل</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>الاسم بالكامل *</label><input type="text" id="custName" placeholder="أدخل اسمك الكريم"></div>
+                <div class="form-group"><label>رقم الواتساب / الهاتف *</label><input type="tel" id="custPhone" placeholder="01xxxxxxxxx"></div>
+                <div class="form-group"><label>العنوان التفصيلي *</label><input type="text" id="custAddress" placeholder="أدخل العنوان التفصيلي"></div>
+            </div>
+            <div class="order-summary">
+                <span>إجمالي الطلب:</span>
+                <strong style="color:var(--primary-gold); font-size:20px;" id="grandTotalPrice">0 ج.م</strong>
+            </div>
+            <button class="submit-btn" id="submitOrderBtn" onclick="sendOrderToWhatsApp()">
+                <i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> تأكيد الطلب المباشر عبر الواتساب
+            </button>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div class="modal-overlay" id="adminModal">
+        <div class="modal-card">
+            <i class="fa-solid fa-xmark close-btn" onclick="closeAdminModal()"></i>
+            
+            <div id="adminLoginForm">
+                <h3 style="color:var(--primary-gold); margin-bottom:15px; text-align:center;">دخول لوحة تحكم المالك</h3>
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="adminPass" placeholder="أدخل كلمة المرور">
+                </div>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000;" onclick="adminLogin()">دخول</button>
+            </div>
+
+            <div id="adminControls" style="display:none;">
+                <h3 style="color:var(--primary-gold); margin-bottom:15px;">لوحة التحكم (قاعدة بيانات سحابية)</h3>
+                
+                <div class="admin-stat-card">
+                    <div class="stat-info">
+                        <span>إجمالي الزوار الفريدين (Unique IPs)</span>
+                        <strong id="adminVisitorCount">0</strong>
+                    </div>
+                    <i class="fa-solid fa-users"></i>
+                </div>
+
+                <div class="admin-stat-card" style="background: rgba(37, 211, 102, 0.1); border-color: var(--whatsapp-green);">
+                    <div class="stat-info">
+                        <span>إجمالي مرات مشاركة / نسخ رابط الموقع</span>
+                        <strong id="adminShareCount" style="color: var(--whatsapp-green);">0</strong>
+                    </div>
+                    <i class="fa-solid fa-share-nodes" style="color: var(--whatsapp-green);"></i>
+                </div>
+
+                <h4 id="prodFormHeader" style="color:#fff; font-size:13px; margin-bottom:8px;">إضافة منتج رئيسي جديد:</h4>
+                <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newProdName" placeholder="اسم المنتج الرئيسي"></div>
+                <div class="form-group" style="margin-bottom:10px;"><input type="number" id="newProdPrice" placeholder="السعر بـ ج.م"></div>
+                <div class="form-group" style="margin-bottom:10px;"><input type="number" id="newProdStock" placeholder="كمية المخزون المتاحة (افتراضي 50)"></div>
+                <div class="form-group" style="margin-bottom:15px;"><label>رابط صورة المنتج (URL مباشر):</label><input type="url" id="newProdImgUrl" placeholder="https://..."></div>
+
+                <button class="submit-btn" id="saveProdBtn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="saveProductAction()">إضافة المنتج سحابياً</button>
+                <button class="submit-btn" id="cancelEditBtn" style="background:#444; color:#fff; margin-bottom:20px; display:none;" onclick="resetProductForm()">إلغاء التعديل</button>
+                
+                <hr style="border-color:var(--card-border); margin-bottom:20px;">
+
+                <h4 style="color:#fff; font-size:13px; margin-bottom:8px;">إضافة نوع أو نكهة جديدة لمنتج:</h4>
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label>اختر المنتج المستهدف:</label>
+                    <select id="targetProductSelect"></select>
+                </div>
+                <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newVariantName" placeholder="اسم النوع أو النكهة"></div>
+                <div class="form-group" style="margin-bottom:10px;"><input type="text" id="newVariantDesc" placeholder="وصف أو تفاصيل النوع"></div>
+                <div class="form-group" style="margin-bottom:15px;"><label>رابط صورة النوع (URL مباشر):</label><input type="url" id="newVariantImgUrl" placeholder="https://..."></div>
+
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:20px;" onclick="addNewVariantToProduct()">حفظ وإضافة النكهة سحابياً</button>
+
+                <hr style="border-color:var(--card-border); margin-bottom:20px;">
+
+                <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إدارة المخزون والمنتجات (مع تفاصيل النكهات):</h4>
+                <div id="adminProductList" style="margin-bottom:20px; max-height:220px; overflow-y:auto;"></div>
+
+                <hr style="border-color:var(--card-border); margin-bottom:20px;">
+
+                <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إضافة صورة رأي عميل:</h4>
+                <div class="form-group" style="margin-bottom:15px;"><input type="url" id="newRevImgUrl" placeholder="رابط صورة الرأي URL مباشر"></div>
+                <button class="submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:15px;" onclick="addNewReview()">إضافة صورة الرأي سحابياً</button>
+                
+                <h4 style="color:#fff; font-size:13px; margin-bottom:10px;">إدارة وحذف آراء العملاء:</h4>
+                <div id="adminReviewList" style="margin-bottom:20px; max-height:150px; overflow-y:auto;"></div>
+
+                <button class="submit-btn" style="background:#333; color:#fff; margin-top:10px;" onclick="adminLogout()">تسجيل الخروج</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="image-modal" id="imageModal" onclick="closeImageModal()">
+        <span class="close-img-btn">&times;</span>
+        <img id="modalImgSrc" src="" alt="صورة مكبرة">
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://zhppvfabbjffmjgsiaza.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_k6SigiKq0iAPzvxPwyW8LQ_4bdqEVEq";
+        
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const defaultProducts = [
+            { 
+                id: 1, 
+                title: "انسام 5 ساعات", 
+                price: 80, 
+                stock_quantity: 50,
+                badge: "الأكثر مبيعاً", 
+                variants: [
+                    { name: "روح المسك", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "بخور أنسام روح المسك، تجربة عطرية تجمع بين الانتعاش والنعومة، مع لمحات زهرية منعشة." },
+                    { name: "أرابيسك كلاسيك", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "خلطة شرقية أصلية تدوم طويلاً بثبات وعطر فواح." }
+                ]
+            },
+            { 
+                id: 2, 
+                title: "تيجان", 
+                price: 65, 
+                stock_quantity: 30,
+                badge: "مميز", 
+                variants: [
+                    { name: "اضواء باريس", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "عطر فريد يجعلك تشعر وكأنك تتجول في شوارع باريس العامرة بالأضواء والروائح الخلابة." },
+                    { name: "نفائس العود", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "عبير العود الملكي الأصيل للمجالس الفاخرة." }
+                ]
+            }
+        ];
+
+        let products = [];
+        let reviews = [];
+        let quantities = {};
+        let selectedVariantIndexes = {};
+        let editingProductId = null;
+
+        window.onload = function() {
+            registerVisitorIP();
+            loadDataFromCloud();
+        };
+
+        function scrollToSection(id) {
+            const el = document.getElementById(id);
+            if(el) el.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function copySiteLink() {
+            const shareData = {
+                title: 'متجر بخور الشيخ',
+                text: 'اكتشف أجود أنواع العود المسك والبخور الفاخر من متجر بخور الشيخ:',
+                url: window.location.href
+            };
+
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    await navigator.clipboard.writeText(window.location.href);
+                    alert('✨ تم نسخ رابط الموقع بنجاح!');
+                }
+
+                await supabaseClient.from('shares').insert([{ action_type: 'share_or_copy' }]);
+                
+                if(typeof fetchShareStats === 'function') {
+                    fetchShareStats();
+                }
+            } catch (err) {
+                console.log('Error sharing: ', err);
+            }
+        }
+
+        async function fetchShareStats() {
+            try {
+                let { count, error } = await supabaseClient.from('shares').select('*', { count: 'exact', head: true });
+                if (!error && count !== null) {
+                    document.getElementById('adminShareCount').innerText = count;
+                }
+            } catch(e) {
+                console.log("Error fetching share stats", e);
+            }
+        }
+
+        async function registerVisitorIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                const userIp = data.ip;
+
+                if (userIp) {
+                    let { data: existingIp } = await supabaseClient.from('analytics').select('ip').eq('ip', userIp);
+                    if (!existingIp || existingIp.length === 0) {
+                        await supabaseClient.from('analytics').insert([{ ip: userIp }]);
+                    }
+                }
+            } catch(e) {
+                console.log("Analytics IP tracking error", e);
+            }
+        }
+
+        async function fetchUniqueVisitorsCount() {
+            try {
+                let { count, error } = await supabaseClient.from('analytics').select('*', { count: 'exact', head: true });
+                if (!error && count !== null) {
+                    document.getElementById('adminVisitorCount').innerText = count;
+                }
+            } catch(e) {
+                console.log("Error fetching visitor stats", e);
+            }
+        }
+
+        async function loadDataFromCloud() {
+            try {
+                let { data: prodData, error: prodErr } = await supabaseClient.from('products').select('*');
+                if (!prodErr && prodData && prodData.length > 0) {
+                    products = prodData;
+                } else {
+                    for (let p of defaultProducts) {
+                        await supabaseClient.from('products').upsert(p);
+                    }
+                    products = [...defaultProducts];
+                }
+
+                let { data: revData, error: revErr } = await supabaseClient.from('reviews').select('*');
+                if (!revErr && revData) {
+                    reviews = revData;
+                }
+            } catch(e) {
+                console.log("Error loading cloud data", e);
+                products = [...defaultProducts];
+            }
+            renderProducts();
+            renderReviews();
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = '';
+            products.forEach(p => {
+                if(!quantities[p.id]) quantities[p.id] = 0;
+                if(selectedVariantIndexes[p.id] === undefined) selectedVariantIndexes[p.id] = 0;
+                
+                let variantsList = p.variants && p.variants.length > 0 ? p.variants : [{ name: "النوع الأساسي", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "بخور فاخر." }];
+                if(selectedVariantIndexes[p.id] >= variantsList.length) selectedVariantIndexes[p.id] = 0;
+                let currentVariant = variantsList[selectedVariantIndexes[p.id]];
+
+                grid.innerHTML += `
+                    <div class="product-card">
+                        <div class="product-img-box">
+                            <img id="img-prod-${p.id}" src="${currentVariant.img}" referrerpolicy="no-referrer" onclick="openImageModal('${currentVariant.img}')">
+                            ${p.badge ? `<span class="badge-tag">${p.badge}</span>` : ''}
+                        </div>
+                        <div class="product-content">
+                            <div class="product-name">${p.title}</div>
+                            <div class="product-price">${p.price} ج.م</div>
+                            
+                            <div class="variant-box">
+                                <label class="variant-label">اختر النوع / النكهة:</label>
+                                <select class="scent-dropdown" onchange="changeProductVariant(${p.id}, this.value)">
+                                    ${variantsList.map((v, i) => `<option value="${i}" ${i == selectedVariantIndexes[p.id] ? 'selected' : ''}>${v.name}</option>`).join('')}
+                                </select>
+                                <div class="scent-desc" id="desc-prod-${p.id}">${currentVariant.desc}</div>
+                            </div>
+
+                            <div class="qty-row">
+                                <button class="qty-btn" onclick="updateQty(${p.id}, -1)">-</button>
+                                <span class="qty-val" id="qty-${p.id}">${quantities[p.id]}</span>
+                                <button class="qty-btn" onclick="updateQty(${p.id}, 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            calcTotal();
+        }
+
+        function changeProductVariant(prodId, variantIdx) {
+            selectedVariantIndexes[prodId] = parseInt(variantIdx);
+            let p = products.find(item => item.id == prodId);
+            if(p && p.variants) {
+                let selected = p.variants[variantIdx];
+                let imgElement = document.getElementById(`img-prod-${prodId}`);
+                imgElement.src = selected.img;
+                imgElement.setAttribute('onclick', `openImageModal('${selected.img}')`);
+                document.getElementById(`desc-prod-${prodId}`).innerText = selected.desc;
+            }
+        }
+
+        function renderReviews() {
+            const grid = document.getElementById('reviewsGrid');
+            grid.innerHTML = '';
+            reviews.forEach(r => {
+                grid.innerHTML += `
+                    <div class="review-card">
+                        <img src="${r.img}" referrerpolicy="no-referrer" onclick="openImageModal('${r.img}')">
+                    </div>
+                `;
+            });
+        }
+
+        function renderAdminLists() {
+            const prodList = document.getElementById('adminProductList');
+            prodList.innerHTML = '';
+            const targetSelect = document.getElementById('targetProductSelect');
+            targetSelect.innerHTML = '';
+
+            products.forEach(p => {
+                let stockText = p.stock_quantity !== undefined ? `مخزون إجمالي: ${p.stock_quantity}` : 'مخزون: 50';
+                
+                let variantsHTML = '';
+                if(p.variants && p.variants.length > 0) {
+                    p.variants.forEach(v => {
+                        variantsHTML += `<div class="admin-variants-sublist">• نوع/نكهة: <strong>${v.name}</strong></div>`;
+                    });
+                }
+
+                prodList.innerHTML += `
+                    <div class="admin-item-box">
+                        <div class="admin-item-header">
+                            <span class="admin-item-title">${p.title} (${p.price} ج.م) | ${stockText}</span>
+                            <div class="admin-actions-btns">
+                                <button class="admin-edit-btn" onclick="prepareEditProduct('${p.id}')">تعديل</button>
+                                <button class="admin-del-btn" onclick="deleteProduct('${p.id}')">حذف</button>
+                            </div>
+                        </div>
+                        ${variantsHTML}
+                    </div>
+                `;
+                targetSelect.innerHTML += `<option value="${p.id}">${p.title}</option>`;
+            });
+
+            const revList = document.getElementById('adminReviewList');
+            revList.innerHTML = '';
+            reviews.forEach((r, index) => {
+                revList.innerHTML += `
+                    <div class="admin-item-box" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="admin-item-title" style="font-size:13px;">صورة رأي عميل #${index + 1}</span>
+                        <button class="admin-del-btn" onclick="deleteReview('${r.id}')">حذف</button>
+                    </div>
+                `;
+            });
+        }
+
+        function prepareEditProduct(id) {
+            let p = products.find(item => item.id == id);
+            if(p) {
+                editingProductId = p.id;
+                document.getElementById('newProdName').value = p.title;
+                document.getElementById('newProdPrice').value = p.price;
+                document.getElementById('newProdStock').value = p.stock_quantity !== undefined ? p.stock_quantity : 50;
+                document.getElementById('newProdImgUrl').value = (p.variants && p.variants[0]) ? p.variants[0].img : '';
+                
+                document.getElementById('prodFormHeader').innerText = `تعديل المنتج: ${p.title}`;
+                document.getElementById('saveProdBtn').innerText = 'حفظ تعديلات المنتج سحابياً';
+                document.getElementById('cancelEditBtn').style.display = 'block';
+            }
+        }
+
+        function resetProductForm() {
+            editingProductId = null;
+            document.getElementById('newProdName').value = '';
+            document.getElementById('newProdPrice').value = '';
+            document.getElementById('newProdStock').value = '';
+            document.getElementById('newProdImgUrl').value = '';
+            document.getElementById('prodFormHeader').innerText = 'إضافة منتج رئيسي جديد:';
+            document.getElementById('saveProdBtn').innerText = 'إضافة المنتج سحابياً';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+        }
+
+        async function saveProductAction() {
+            const name = document.getElementById('newProdName').value.trim();
+            const price = parseFloat(document.getElementById('newProdPrice').value);
+            const stockInput = parseInt(document.getElementById('newProdStock').value);
+            const stockVal = isNaN(stockInput) ? 50 : stockInput;
+            const urlInput = document.getElementById('newProdImgUrl').value.trim();
+
+            if(!name || isNaN(price)) {
+                alert('برجاء كتابة اسم المنتج والسعر بشكل صحيح.');
+                return;
+            }
+
+            const defaultImg = urlInput !== '' ? urlInput : "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
+
+            if (editingProductId !== null) {
+                let p = products.find(item => item.id == editingProductId);
+                if (p) {
+                    p.title = name;
+                    p.price = price;
+                    p.stock_quantity = stockVal;
+                    if (!p.variants || p.variants.length === 0) {
+                        p.variants = [{ name: "النوع الأساسي", img: defaultImg, desc: "بخور فاخر ومميز." }];
+                    } else if (urlInput !== '') {
+                        p.variants[0].img = defaultImg;
+                    }
+
+                    let { error } = await supabaseClient.from('products').update({
+                        title: p.title,
+                        price: p.price,
+                        stock_quantity: p.stock_quantity,
+                        variants: p.variants
+                    }).eq('id', editingProductId);
+
+                    if(!error) {
+                        renderProducts();
+                        renderAdminLists();
+                        alert('تم تحديث بيانات المنتج والمخزون سحابياً بنجاح!');
+                        resetProductForm();
+                    } else {
+                        alert('حدث خطأ أثناء تحديث المنتج.');
+                    }
+                }
+                return;
+            }
+
+            const newProd = {
+                id: Date.now(),
+                title: name,
+                price: price,
+                stock_quantity: stockVal,
+                badge: "جديد",
+                variants: [
+                    { name: "النوع الأساسي", img: defaultImg, desc: "بخور فاخر ومميز." }
+                ]
+            };
+
+            let { error } = await supabaseClient.from('products').insert([newProd]);
+            if(!error) {
+                products.push(newProd);
+                renderProducts();
+                renderAdminLists();
+                alert('تمت إضافة المنتج ومزامنته سحابياً بنجاح!');
+                resetProductForm();
+            } else {
+                alert('حدث خطأ أثناء الحفظ في قاعدة البيانات.');
+            }
+        }
+
+        async function deleteProduct(id) {
+            let { error } = await supabaseClient.from('products').delete().eq('id', id);
+            if(!error) {
+                products = products.filter(p => p.id != id);
+                if (editingProductId == id) resetProductForm();
+                renderProducts();
+                renderAdminLists();
+                alert('تم حذف المنتج سحابياً بنجاح!');
+            } else {
+                alert('حدث خطأ أثناء الحذف.');
+            }
+        }
+
+        async function deleteReview(id) {
+            let { error } = await supabaseClient.from('reviews').delete().eq('id', id);
+            if(!error) {
+                reviews = reviews.filter(r => r.id != id);
+                renderReviews();
+                renderAdminLists();
+                alert('تم حذف صورة الرأي سحابياً بنجاح!');
+            } else {
+                alert('حدث خطأ أثناء الحذف.');
+            }
+        }
+
+        function updateQty(id, delta) {
+            quantities[id] = Math.max(0, (quantities[id] || 0) + delta);
+            document.getElementById(`qty-${id}`).innerText = quantities[id];
+            calcTotal();
+        }
+
+        function calcTotal() {
+            let total = 0;
+            products.forEach(p => { total += (quantities[p.id] || 0) * p.price; });
+            document.getElementById('grandTotalPrice').innerText = total + ' ج.م';
+        }
+
+        async function sendOrderToWhatsApp() {
+            const name = document.getElementById('custName').value.trim();
+            const phone = document.getElementById('custPhone').value.trim();
+            const address = document.getElementById('custAddress').value.trim();
+            
+            if(!name || !phone || !address) { 
+                alert('برجاء كتابة كافة بيانات الشحن والتوصيل (الاسم، الهاتف، والعنوان)'); 
+                return; 
+            }
+
+            let total = 0, totalItems = 0, hasItems = false;
+            let cartDetailsSummary = "";
+            let orderedItemsList = [];
+            let webhookProducts = [];
+
+            products.forEach(p => {
+                let q = quantities[p.id] || 0;
+                if(q > 0) {
+                    hasItems = true;
+                    let itemTotal = q * p.price;
+                    total += itemTotal;
+                    totalItems += q;
+                    
+                    let vName = p.variants && p.variants[selectedVariantIndexes[p.id]] ? p.variants[selectedVariantIndexes[p.id]].name : 'النوع الأساسي';
+                    cartDetailsSummary += `- ${p.title} (${vName}) الكمية: ${q} | السعر: ${itemTotal} ج.م\n`;
+                    
+                    orderedItemsList.push({
+                        productId: p.id,
+                        orderedQty: q,
+                        currentStock: p.stock_quantity !== undefined ? p.stock_quantity : 50
+                    });
+                    webhookProducts.push({
+                        productId: p.id,
+                        name: p.title,
+                        variant: vName,
+                        quantity: q,
+                        unitPrice: p.price,
+                        subtotal: itemTotal
+                    });
+                }
+            });
+
+            if(!hasItems) { 
+                alert('برجاء اختيار كمية المنتجات المطلوبة أولاً'); 
+                return; 
+            }
+
+            // WhatsApp expects an international number without + or leading 00.
+            let whatsappNumber = phone.replace(/\D/g, '');
+            if (whatsappNumber.startsWith('00')) {
+                whatsappNumber = whatsappNumber.slice(2);
+            } else if (whatsappNumber.startsWith('0')) {
+                whatsappNumber = `20${whatsappNumber.slice(1)}`;
+            }
+
+            const submitBtn = document.getElementById('submitOrderBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري إرسال وحفظ الطلب...';
+            // Open synchronously from the click so the browser does not block the
+            // WhatsApp tab after the Supabase and webhook requests finish.
+            const whatsappWindow = window.open('', '_blank');
+
+            try {
+                // حفظ الطلب في Supabase أولاً
+                const { error } = await supabaseClient
+                    .from('orders')
+                    .insert([
+                        { 
+                            customer_name: name, 
+                            customer_phone: phone, 
+                            customer_address: address, 
+                            total_amount: total,
+                            order_details: cartDetailsSummary,
+                            total_items_count: totalItems
+                        }
+                    ]);
+
+                if (error) {
+                    console.error('Supabase order insert failed:', error);
+                    if (whatsappWindow) whatsappWindow.close();
+                    alert('حدث خطأ أثناء حفظ الطلب سحابياً، برجاء المحاولة مرة أخرى.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> تأكيد الطلب المباشر عبر الواتساب';
+                    return;
+                }
+
+                console.log('Supabase order insert succeeded:', {
+                    customer_name: name,
+                    customer_phone: phone,
+                    total: total,
+                    item_count: totalItems
+                });
+
+                // إرسال تفاصيل الطلب إلى Make بعد نجاح الحفظ في Supabase
+                const makeOrderPayload = {
+                    customer_name: name,
+                    customer_phone: whatsappNumber,
+                    customer_phone_input: phone,
+                    customer_address: address,
+                    products: webhookProducts,
+                    total: total,
+                    total_price: total
+                };
+
+                try {
+                    console.log('Sending order to Make.com webhook:', {
+                        customer_phone: makeOrderPayload.customer_phone,
+                        products: makeOrderPayload.products.length,
+                        total: makeOrderPayload.total_price
+                    });
+                    const webhookResponse = await fetch('https://hook.eu1.make.com/1k4l3mxlwyfldhuid3qd7w3l1utx3ocn', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(makeOrderPayload)
+                    });
+
+                    if (webhookResponse.ok) {
+                        console.log('Make.com webhook succeeded:', {
+                            status: webhookResponse.status,
+                            customer_phone: makeOrderPayload.customer_phone,
+                            products: makeOrderPayload.products.length,
+                            total: makeOrderPayload.total_price
+                        });
+                    } else {
+                        console.error('Make.com webhook failed:', {
+                            status: webhookResponse.status,
+                            statusText: webhookResponse.statusText
+                        });
+                    }
+                } catch (webhookError) {
+                    console.error('Make.com webhook request failed after the Supabase order was saved:', webhookError);
+                }
+
+                // خصم المخزون من قاعدة البيانات
+                for (let item of orderedItemsList) {
+                    let updatedStock = Math.max(0, item.currentStock - item.orderedQty);
+                    let pObj = products.find(p => p.id == item.productId);
+                    if(pObj) pObj.stock_quantity = updatedStock;
+
+                    await supabaseClient
+                        .from('products')
+                        .update({ stock_quantity: updatedStock })
+                        .eq('id', item.productId);
+                }
+
+                const text = `✨ تم استلام طلبك من متجر بخور الشيخ ✨\n\n` +
+                             `👤 الاسم: ${name}\n` +
+                             `📱 الهاتف: ${phone}\n` +
+                             `📍 العنوان: ${address}\n\n` +
+                             `الطلبات:\n${cartDetailsSummary}\n` +
+                             `📦 إجمالي القطع المطلوبة: ${totalItems}\n` +
+                             `💰 الإجمالي الكلي: ${total} جنيه مصري\n\n` +
+                             `يرجى إرسال هذه الرسالة لتأكيد استلام طلبك.`;
+
+                const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
+                if (whatsappWindow) {
+                    whatsappWindow.location.href = whatsappUrl;
+                } else {
+                    console.error('WhatsApp confirmation could not open because the browser blocked the new tab.');
+                }
+
+            } catch (err) {
+                if (whatsappWindow) whatsappWindow.close();
+                console.error('Unexpected order submission error:', err);
+            } finally {
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> تأكيد الطلب المباشر عبر الواتساب';
+                }, 3000);
+            }
+        }
+
+        function openAdminModal() { 
+            document.getElementById('adminModal').style.display = 'flex'; 
+            renderAdminLists(); 
+            fetchUniqueVisitorsCount();
+            fetchShareStats();
+        }
+
+        function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; resetProductForm(); }
+
+        function openImageModal(src) {
+            document.getElementById('modalImgSrc').src = src;
+            document.getElementById('imageModal').style.display = 'flex';
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        function adminLogin() {
+            const p = document.getElementById('adminPass').value;
+            if(p === '1234') {
+                document.getElementById('adminLoginForm').style.display = 'none';
+                document.getElementById('adminControls').style.display = 'block';
+                fetchUniqueVisitorsCount();
+                fetchShareStats();
+                renderAdminLists();
+            } else { 
+                alert('كلمة المرور غير صحيحة!'); 
+            }
+        }
+
+        function adminLogout() {
+            document.getElementById('adminLoginForm').style.display = 'block';
+            document.getElementById('adminControls').style.display = 'none';
+            document.getElementById('adminPass').value = '';
+            resetProductForm();
+            closeAdminModal();
+        }
+
+        async function addNewVariantToProduct() {
+            const prodId = parseInt(document.getElementById('targetProductSelect').value);
+            const varName = document.getElementById('newVariantName').value.trim();
+            const varDesc = document.getElementById('newVariantDesc').value.trim() || "بخور أصيل عالي الجودة.";
+            const urlInput = document.getElementById('newVariantImgUrl').value.trim();
+
+            if(!varName) {
+                alert('برجاء كتابة اسم النوع أو النكهة.');
+                return;
+            }
+
+            const defaultImg = urlInput !== '' ? urlInput : "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
+
+            let p = products.find(item => item.id == prodId);
+            if(p) {
+                if(!p.variants) p.variants = [];
+                p.variants.push({ name: varName, img: defaultImg, desc: varDesc });
+                
+                let { error } = await supabaseClient.from('products').update({ variants: p.variants }).eq('id', prodId);
+                if(!error) {
+                    renderProducts();
+                    renderAdminLists();
+                    alert('تم حفظ النكهة سحابياً بنجاح!');
+                    document.getElementById('newVariantName').value = '';
+                    document.getElementById('newVariantDesc').value = '';
+                    document.getElementById('newVariantImgUrl').value = '';
+                } else {
+                    alert('حدث خطأ أثناء حفظ النكهة.');
+                }
+            }
+        }
+
+        async function addNewReview() {
+            const urlInput = document.getElementById('newRevImgUrl').value.trim();
+            if(urlInput !== '') {
+                const newRev = { id: Date.now(), img: urlInput };
+                let { error } = await supabaseClient.from('reviews').insert([newRev]);
+                if(!error) {
+                    reviews.push(newRev);
+                    renderReviews();
+                    renderAdminLists();
+                    alert('تمت إضافة وحفظ صورة الرأي سحابياً بنجاح!');
+                    document.getElementById('newRevImgUrl').value = '';
+                } else {
+                    alert('حدث خطأ أثناء إضافة صورة الرأي.');
+                }
+            } else {
+                alert('برجاء أدخل رابط الصورة.');
+            }
+        }
+    </script>
+</body>
+</html>
