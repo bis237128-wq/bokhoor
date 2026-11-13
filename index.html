@@ -814,36 +814,36 @@
                     const webhookTimeout = setTimeout(() => controller.abort(), 15000);
 
                     try {
-                    console.log('Sending order to Make.com webhook:', {
-                        admin_whatsapp_number: payload.notifications.admin.whatsapp_number,
-                        customer_whatsapp_number: payload.notifications.customer.whatsapp_number,
-                        products: payload.products.length,
-                        total: payload.total_price
-                    });
-                    const webhookResponse = await fetch('https://hook.eu1.make.com/1k4l3mxlwyfldhuid3qd7w3l1utx3ocn', {
-                        method: 'POST',
-                        // text/plain is a CORS-simple content type, so browsers
-                        // send the POST directly instead of blocking it at OPTIONS.
-                        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-                        body: JSON.stringify(payload),
-                        signal: controller.signal,
-                        keepalive: true
-                    });
-
-                    if (webhookResponse.ok) {
-                        console.log('Make.com webhook succeeded:', {
-                            status: webhookResponse.status,
+                        console.log('Sending order to Make.com webhook:', {
                             admin_whatsapp_number: payload.notifications.admin.whatsapp_number,
                             customer_whatsapp_number: payload.notifications.customer.whatsapp_number,
                             products: payload.products.length,
                             total: payload.total_price
                         });
-                    } else {
-                        console.error('Make.com webhook failed:', {
-                            status: webhookResponse.status,
-                            statusText: webhookResponse.statusText
+                        const webhookResponse = await fetch('https://hook.eu1.make.com/1k4l3mxlwyfldhuid3qd7w3l1utx3ocn', {
+                            method: 'POST',
+                            // text/plain is a CORS-simple content type, so browsers
+                            // send the POST directly instead of blocking it at OPTIONS.
+                            headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                            body: JSON.stringify(payload),
+                            signal: controller.signal,
+                            keepalive: true
                         });
-                    }
+
+                        if (webhookResponse.ok) {
+                            console.log('Make.com webhook succeeded:', {
+                                status: webhookResponse.status,
+                                admin_whatsapp_number: payload.notifications.admin.whatsapp_number,
+                                customer_whatsapp_number: payload.notifications.customer.whatsapp_number,
+                                products: payload.products.length,
+                                total: payload.total_price
+                            });
+                        } else {
+                            console.error('Make.com webhook failed:', {
+                                status: webhookResponse.status,
+                                statusText: webhookResponse.statusText
+                            });
+                        }
                     } catch (webhookError) {
                         console.error('Make.com webhook request failed after the Supabase order was saved:', webhookError);
                     } finally {
