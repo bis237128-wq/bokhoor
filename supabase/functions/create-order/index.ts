@@ -1,8 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { normalizeEgyptianMobile } from '../_shared/phone.ts';
-import { sendUltramsg } from '../_shared/ultramsg.ts';
 
-const ADMIN_WHATSAPP_NUMBER = '201278771472';
 const ORDER_FIELDS = 'id, client_request_id, created_at, customer_name, customer_phone, customer_address, order_details, order_items, total_amount, total_items_count';
 
 function json(data: unknown, status = 200, headers: HeadersInit = {}) {
@@ -83,7 +81,7 @@ Deno.serve(async (request) => {
     }
 
     const { data: catalog, error: catalogError } = await db.from('products')
-      .select('id, title, price, stock_quantity, variants').in('id', [...seen]);
+      .select('id, title, price, variants').in('id', [...seen]);
     if (catalogError || !catalog || catalog.length !== normalizedItems.length) {
       return json({ error: 'One or more products are unavailable' }, 422, cors);
     }
@@ -100,10 +98,6 @@ Deno.serve(async (request) => {
           !product.variants.some((variant: { name?: string } | string) =>
             (typeof variant === 'string' ? variant : variant?.name) === item.variant)) {
         return json({ error: 'Product variant is unavailable' }, 422, cors);
-      }
-      const stock = Number(product.stock_quantity);
-      if (Number.isFinite(stock) && stock >= 0 && stock < item.quantity) {
-        return json({ error: 'Requested quantity is unavailable' }, 422, cors);
       }
       const subtotal = price * item.quantity;
       total += subtotal;
@@ -144,85 +138,13 @@ Deno.serve(async (request) => {
     }
   }
 
-  if (order && productsPayload.length === 0 && Array.isArray(order.order_items)) {
-    productsPayload = order.order_items as Array<Record<string, unknown>>;
-  }
-
-  const customerPhone = normalizeEgyptianMobile(order.customer_phone);
-  if (!customerPhone) return json({ error: 'Saved order has an invalid Egyptian mobile number' }, 422, cors);
+  // The existing database trigger is the sole notification route. It sends the
+  // new-order event to Make after INSERT; this function must never send WhatsApp.
   const orderId = String(order.id);
-  const idempotencyKey = `order.created:${orderId}`;
-  const details = String(order.order_details ?? '').slice(0, 5000);
-  const createdAt = new Date(String(order.created_at ?? Date.now()))
-    .toLocaleString('ar-EG', { timeZone: 'Africa/Cairo' });
-  const adminMessage = `✨ طلب جديد من متجر بخور الشيخ ✨\n` +
-    `رقم الطلب: #${orderId}\n` +
-    `التاريخ والوقت: ${createdAt}\n\n` +
-    `👤 الاسم: ${String(order.customer_name ?? '').slice(0, 200)}\n` +
-    `📱 الهاتف: ${customerPhone}\n` +
-    `📍 العنوان: ${String(order.customer_address ?? '').slice(0, 1000)}\n\n` +
-    `الطلبات:\n${details}\n` +
-    `📦 إجمالي القطع المطلوبة: ${Number(order.total_items_count) || 0}\n` +
-    `💰 الإجمالي الكلي: ${Number(order.total_amount) || 0} جنيه مصري`;
-  const customerMessage = `أهلاً بك في بخور الشيخ 🌿\n\n` +
-    `تم استلام طلبك بنجاح!\nرقم الطلب: ${orderId}\n\n` +
-    `نعمل حالياً على مراجعة طلبك وتجهيزه، وسنتواصل معك قريباً لتأكيد التفاصيل.\n\n` +
-    `شكراً لثقتك بنا ❤️\nبخور الشيخ`;
-  const whatsappDraft = `مرحبًا، أريد تأكيد طلبي من متجر بخور الشيخ 🌿\n\n` +
-    `رقم الطلب: #${orderId}\n\n` +
-    `الاسم: ${String(order.customer_name ?? '').slice(0, 200)}\n` +
-    `رقم الهاتف: ${customerPhone}\n` +
-    `العنوان: ${String(order.customer_address ?? '').slice(0, 1000)}\n\n` +
-    `المنتجات:\n${details}\n\n` +
-    `الإجمالي: ${Number(order.total_amount) || 0} جنيه مصري\n\n` +
-    `شكرًا لكم ❤️`;
-  const notificationClaims = (['admin', 'customer'] as const).map((notificationType) => ({
-    order_id: orderId,
-    notification_type: notificationType,
-    idempotency_key: `${idempotencyKey}:${notificationType}`,
-    whatsapp_notification_status: 'processing',
-    attempt_count: 1,
-    last_attempt_at: new Date().toISOString(),
-  }));
-  const { error: claimError } = await db.from('whatsapp_notifications').insert(notificationClaims);
-  if (claimError?.code === '23505') {
-    const { data: prior } = await db.from('whatsapp_notifications')
-      .select('notification_type, whatsapp_notification_status').eq('order_id', orderId);
-    const statusByType = Object.fromEntries((prior ?? []).map((row) => [row.notification_type, row.whatsapp_notification_status]));
-    return json({
-      ok: true,
-      order_id: orderId,
-      duplicate_order: duplicateOrder,
-      duplicate_notification: true,
-      idempotency_key: idempotencyKey,
-      notification_status: statusByType,
-      whatsapp_draft: whatsappDraft,
-    }, 200, cors);
-  }
-  if (claimError) return json({ error: 'Order saved but notification could not be claimed', order_id: orderId }, 500, cors);
-
-  const messages = [
-    { type: 'admin', to: ADMIN_WHATSAPP_NUMBER, body: adminMessage, key: `${idempotencyKey}:admin` },
-    { type: 'customer', to: customerPhone, body: customerMessage, key: `${idempotencyKey}:customer` },
-  ] as const;
-  const outcomes = await Promise.all(messages.map(async (message) => {
-    const result = await sendUltramsg(message.to, message.body);
-    const { error: updateError } = await db.from('whatsapp_notifications').update({
-      whatsapp_notification_status: result.status,
-      whatsapp_message_id: result.messageId,
-      whatsapp_retryable: result.retryable,
-      whatsapp_error: result.error,
-      updated_at: new Date().toISOString(),
-    }).eq('idempotency_key', message.key);
-    return { [message.type]: updateError ? 'tracking_update_failed' : result.status };
-  }));
-
   return json({
     ok: true,
     order_id: orderId,
     duplicate_order: duplicateOrder,
-    idempotency_key: idempotencyKey,
-    notification_status: Object.assign({}, ...outcomes),
-    whatsapp_draft: whatsappDraft,
+    notification_route: 'database-trigger-to-make',
   }, 200, cors);
 });

@@ -129,6 +129,7 @@
             display: flex; align-items: center; justify-content: center; gap: 10px;
         }
         .submit-btn:disabled { background: #555; cursor: not-allowed; opacity: 0.7; }
+        .availability-note { color: #d8c9a5; font-size: 13px; line-height: 1.7; margin: 10px 0; }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -216,8 +217,9 @@
                 <span>إجمالي الطلب:</span>
                 <strong style="color:var(--primary-gold); font-size:20px;" id="grandTotalPrice">0 ج.م</strong>
             </div>
+            <p class="availability-note">المخزون غير مسجل حالياً؛ سنراجع توفر المنتجات ونتواصل معك لتأكيد الطلب.</p>
             <button class="submit-btn" id="submitOrderBtn" onclick="sendOrderToWhatsApp()">
-                <i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> حفظ الطلب وفتح WhatsApp
+                <i class="fa-solid fa-check" style="font-size:20px;"></i> تأكيد الطلب
             </button>
         </div>
     </div>
@@ -725,7 +727,6 @@
                     orderedItemsList.push({
                         productId: p.id,
                         orderedQty: q,
-                        currentStock: p.stock_quantity !== undefined ? p.stock_quantity : 50,
                         variant: vName
                     });
                 }
@@ -741,11 +742,7 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري حفظ الطلب...';
             let orderSaved = false;
-            let whatsappWindow = null;
             try {
-                // Reserve a popup synchronously; it remains blank unless the server confirms
-                // that the order was saved, avoiding popup blockers after the async request.
-                try { whatsappWindow = window.open('about:blank', '_blank'); } catch { whatsappWindow = null; }
                 const requestStorageKey = 'bokhoor_pending_order_request_id';
                 let clientRequestId = sessionStorage.getItem(requestStorageKey);
                 if (!clientRequestId) {
@@ -777,59 +774,13 @@
                 sessionStorage.removeItem(requestStorageKey);
                 orderSaved = true;
                 submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> تم حفظ الطلب';
-
-                const notificationStatus = orderResponse.notification_status;
-                const notificationFailed = notificationStatus === 'failed' ||
-                    (notificationStatus && typeof notificationStatus === 'object' &&
-                        Object.values(notificationStatus).some(status => ['failed', 'unknown', 'tracking_update_failed'].includes(status)));
-                if (notificationFailed) {
-                    console.error('Order saved, but notification dispatch failed.');
-                }
-
-                // خصم المخزون من قاعدة البيانات
-                const stockUpdateTasks = orderedItemsList.map(async (item) => {
-                    let updatedStock = Math.max(0, item.currentStock - item.orderedQty);
-                    let pObj = products.find(p => p.id == item.productId);
-                    if(pObj) pObj.stock_quantity = updatedStock;
-
-                    const { error: stockError } = await supabaseClient
-                        .from('products')
-                        .update({ stock_quantity: updatedStock })
-                        .eq('id', item.productId);
-                    if (stockError) throw stockError;
-                });
-
-                void Promise.allSettled(stockUpdateTasks).then(results => {
-                    const failedUpdates = results.filter(result => result.status === 'rejected');
-                    if (failedUpdates.length) {
-                        console.error('One or more Supabase stock updates failed:', failedUpdates);
-                    } else {
-                        console.log('Supabase stock updates succeeded:', results.length);
-                    }
-                });
-
                 quantities = {};
                 renderProducts();
                 calcTotal();
-
-                const draft = typeof orderResponse.whatsapp_draft === 'string' ? orderResponse.whatsapp_draft : '';
-                if (!draft) {
-                    if (whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
-                    alert(`تم حفظ طلبك رقم ${savedOrder.id}، لكن تعذر تجهيز رسالة WhatsApp. تواصل معنا لإكمال التأكيد.`);
-                    return;
-                }
-                const whatsappUrl = `https://wa.me/201278771472?text=${encodeURIComponent(draft)}`;
-                if (whatsappWindow && !whatsappWindow.closed) {
-                    whatsappWindow.location.href = whatsappUrl;
-                    alert(`تم حفظ طلبك رقم ${savedOrder.id}. افتح WhatsApp واضغط زر الإرسال لإكمال تأكيد الطلب.`);
-                } else {
-                    alert(`تم حفظ طلبك رقم ${savedOrder.id}. سنفتح WhatsApp الآن؛ اضغط زر الإرسال لإكمال تأكيد الطلب.`);
-                    window.location.assign(whatsappUrl);
-                }
+                alert(`تم حفظ طلبك رقم ${savedOrder.id} بنجاح. سنراجع توفر المنتجات ونتواصل معك لتأكيد التفاصيل.`);
 
             } catch (err) {
                 console.error(orderSaved ? 'Order saved, but post-save processing failed:' : 'Order submission failed:', err);
-                if (!orderSaved && whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
                 if (!orderSaved) {
                     alert('حدث خطأ أثناء إرسال الطلب، برجاء المحاولة مرة أخرى.');
                 }
@@ -837,11 +788,11 @@
                 if (!orderSaved) {
                     window.bokhoorOrderSubmitting = false;
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> حفظ الطلب وفتح WhatsApp';
+                    submitBtn.innerHTML = '<i class="fa-solid fa-check" style="font-size:20px;"></i> تأكيد الطلب';
                 } else {
                     window.bokhoorOrderSubmitting = false;
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> حفظ الطلب وفتح WhatsApp';
+                    submitBtn.innerHTML = '<i class="fa-solid fa-check" style="font-size:20px;"></i> تأكيد الطلب';
                 }
             }
         }
