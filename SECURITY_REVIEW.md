@@ -3,12 +3,12 @@
 ## Current production evidence (read-only inspection)
 
 - Supabase project ref: `zhppvfabbjffmjgsiaza` (active, `eu-west-1`).
-- `public.orders` has 46 rows and no RLS. `orders.id` is `bigint`; current customer and amount columns are nullable.
-- `public.products` has 4 rows and RLS enabled, but the existing `Allow public access to products` policy is `ALL` with unconditional `USING` and `WITH CHECK`.
+- `public.orders` has 53 rows and RLS enabled, but no row policies. `orders.id` is `bigint`; current customer and amount columns are nullable. `client_request_id` and `order_items` are absent.
+- `public.products` has 4 rows, RLS enabled, and an `Allow public access to products` policy with command `ALL` and unconditional `USING`/`WITH CHECK`. All four live `stock_quantity` values are 0. The live schema has no `is_published` column.
 - `public.reviews` has RLS enabled, but its existing public policy also permits every operation.
 - `public.analytics` and `public.shares` have RLS disabled. Analytics stores IP addresses.
 - `public.whatsapp_notifications` and the new order idempotency fields do not exist yet.
-- The database has no recorded migrations or deployed Edge Functions.
+- The database has no recorded migrations or deployed Edge Functions, including `create-order`.
 - A recent restorable backup could not be verified with the connected tools.
 - No Make or UltraMsg account connection was available. No message was sent.
 
@@ -40,7 +40,7 @@ flowchart LR
 
 The legacy trigger is `trigger_notify_make`, on `public.orders`, calling `public.notify_make_on_new_order()`. The function is `SECURITY DEFINER`, has no configured `search_path`, and was executable by `anon` and `authenticated`. Its URL is intentionally redacted. It POSTs JSON with keys `type`, `table`, `schema`, and `record`; `record` is the entire inserted order row and therefore includes customer information. The Make webhook URL remains embedded in the database function until it is rotated and replaced.
 
-The current admin modal does not query `orders` or call the legacy function. It uses Supabase Auth and manages products/reviews plus analytics counts. The local checkout draft opens a prepared `wa.me` message to the manager only after the server confirms the saved order; the customer must press Send. The local `bokhoor/` page redirects to the main storefront.
+The current admin modal does not query `orders` or call the legacy function. It uses Supabase Auth and manages products/reviews plus analytics counts. The local checkout draft opens a prepared `wa.me` message to the manager only after the server confirms the saved order; the customer must press Send. The local `bokhoor/` page redirects to the main storefront. Recent Data API logs show GET `/rest/v1/products` requests returning HTTP 400 after the client began filtering on the nonexistent `is_published` column; unfiltered product GET requests returned HTTP 200.
 
 ## Staged cutover; no production changes applied
 

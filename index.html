@@ -311,32 +311,8 @@
         
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const defaultProducts = [
-            { 
-                id: 1, 
-                title: "انسام 5 ساعات", 
-                price: 80, 
-                stock_quantity: 50,
-                badge: "الأكثر مبيعاً", 
-                variants: [
-                    { name: "روح المسك", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "بخور أنسام روح المسك، تجربة عطرية تجمع بين الانتعاش والنعومة، مع لمحات زهرية منعشة." },
-                    { name: "أرابيسك كلاسيك", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "خلطة شرقية أصلية تدوم طويلاً بثبات وعطر فواح." }
-                ]
-            },
-            { 
-                id: 2, 
-                title: "تيجان", 
-                price: 65, 
-                stock_quantity: 30,
-                badge: "مميز", 
-                variants: [
-                    { name: "اضواء باريس", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "عطر فريد يجعلك تشعر وكأنك تتجول في شوارع باريس العامرة بالأضواء والروائح الخلابة." },
-                    { name: "نفائس العود", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "عبير العود الملكي الأصيل للمجالس الفاخرة." }
-                ]
-            }
-        ];
-
         let products = [];
+        let productsLoadMessage = 'جاري تحميل المنتجات...';
         let reviews = [];
         let quantities = {};
         let selectedVariantIndexes = {};
@@ -427,16 +403,21 @@
 
         async function loadDataFromCloud() {
             try {
-                const isAdmin = await hasAdminSession();
-                let productQuery = supabaseClient.from('products').select('*');
-                if (!isAdmin) productQuery = productQuery.eq('is_published', true);
-                let { data: prodData, error: prodErr } = await productQuery;
-                if (!prodErr && prodData && prodData.length > 0) {
+                // The live products schema has no is_published column. Read only
+                // fields/rows exposed by the current RLS policy until a reviewed
+                // visibility migration is approved and deployed.
+                const { data: prodData, error: prodErr } = await supabaseClient.from('products')
+                    .select('id,title,price,badge,variants,stock_quantity');
+                if (prodErr) {
+                    console.error('Products could not be loaded from Supabase.');
+                    products = [];
+                    productsLoadMessage = 'تعذر تحميل المنتجات الآن. يرجى إعادة المحاولة لاحقًا.';
+                } else if (Array.isArray(prodData) && prodData.length > 0) {
                     products = prodData;
+                    productsLoadMessage = '';
                 } else {
-                    // Local examples are display-only. Never seed the authoritative
-                    // catalog from a public browser session.
-                    products = [...defaultProducts];
+                    products = [];
+                    productsLoadMessage = 'لا توجد منتجات متاحة حاليًا.';
                 }
 
                 let { data: revData, error: revErr } = await supabaseClient.from('reviews').select('*');
@@ -444,8 +425,9 @@
                     reviews = revData;
                 }
             } catch(e) {
-                console.log("Error loading cloud data", e);
-                products = [...defaultProducts];
+                console.error('Products could not be loaded from Supabase.');
+                products = [];
+                productsLoadMessage = 'تعذر تحميل المنتجات الآن. يرجى إعادة المحاولة لاحقًا.';
             }
             renderProducts();
             renderReviews();
@@ -454,6 +436,15 @@
         function renderProducts() {
             const grid = document.getElementById('productsGrid');
             grid.innerHTML = '';
+            if (!products.length) {
+                const message = document.createElement('p');
+                message.className = 'loading-text';
+                message.setAttribute('role', 'status');
+                message.textContent = productsLoadMessage || 'لا توجد منتجات متاحة حاليًا.';
+                grid.appendChild(message);
+                calcTotal();
+                return;
+            }
             products.forEach(p => {
                 if(!quantities[p.id]) quantities[p.id] = 0;
                 if(selectedVariantIndexes[p.id] === undefined) selectedVariantIndexes[p.id] = 0;
