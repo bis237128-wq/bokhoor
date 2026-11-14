@@ -2,7 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { normalizeEgyptianMobile } from '../_shared/phone.ts';
 
 const ADMIN_WHATSAPP_NUMBER = '201278771472';
-const ORDER_FIELDS = 'id, client_request_id, customer_name, customer_phone, customer_address, order_details, total_amount, total_items_count';
+const ORDER_FIELDS = 'id, client_request_id, customer_name, customer_phone, customer_address, order_details, order_items, total_amount, total_items_count';
 
 function json(data: unknown, status = 200, headers: HeadersInit = {}) {
   return new Response(JSON.stringify(data), {
@@ -66,6 +66,7 @@ Deno.serve(async (request) => {
   if (lookupError) return json({ error: 'Could not check duplicate order' }, 500, cors);
 
   let duplicateOrder = Boolean(order);
+  let productsPayload: Array<Record<string, unknown>> = [];
   if (!order) {
     const normalizedItems: Array<{ product_id: string; quantity: number; variant: string }> = [];
     const seen = new Set<string>();
@@ -109,6 +110,14 @@ Deno.serve(async (request) => {
       totalItems += item.quantity;
       const title = String(product.title ?? 'منتج').slice(0, 200);
       detailLines.push(`- ${title} (${item.variant}) الكمية: ${item.quantity} | السعر: ${subtotal} ج.م`);
+      productsPayload.push({
+        productId: product.id,
+        name: title,
+        variant: item.variant,
+        quantity: item.quantity,
+        unitPrice: price,
+        subtotal,
+      });
     }
     const details = detailLines.join('\n');
     const { data: inserted, error: insertError } = await db.from('orders').insert({
@@ -118,6 +127,7 @@ Deno.serve(async (request) => {
       customer_address: address,
       total_amount: total,
       order_details: details,
+      order_items: productsPayload,
       total_items_count: totalItems,
     }).select(ORDER_FIELDS).single();
 
@@ -134,25 +144,32 @@ Deno.serve(async (request) => {
     }
   }
 
+  if (order && productsPayload.length === 0 && Array.isArray(order.order_items)) {
+    productsPayload = order.order_items as Array<Record<string, unknown>>;
+  }
+
   const customerPhone = normalizeEgyptianMobile(order.customer_phone);
   if (!customerPhone) return json({ error: 'Saved order has an invalid Egyptian mobile number' }, 422, cors);
   const orderId = String(order.id);
   const idempotencyKey = `order.created:${orderId}`;
-  const { error: claimError } = await db.from('whatsapp_notifications').insert({
+  const notificationClaims = (['admin', 'customer'] as const).map((notificationType) => ({
     order_id: orderId,
-    idempotency_key: idempotencyKey,
+    notification_type: notificationType,
+    idempotency_key: `${idempotencyKey}:${notificationType}`,
     whatsapp_notification_status: 'processing',
-  });
+  }));
+  const { error: claimError } = await db.from('whatsapp_notifications').insert(notificationClaims);
   if (claimError?.code === '23505') {
     const { data: prior } = await db.from('whatsapp_notifications')
-      .select('whatsapp_notification_status').eq('order_id', orderId).maybeSingle();
+      .select('notification_type, whatsapp_notification_status').eq('order_id', orderId);
+    const statusByType = Object.fromEntries((prior ?? []).map((row) => [row.notification_type, row.whatsapp_notification_status]));
     return json({
       ok: true,
       order_id: orderId,
       duplicate_order: duplicateOrder,
       duplicate_notification: true,
       idempotency_key: idempotencyKey,
-      notification_status: prior?.whatsapp_notification_status ?? 'processing',
+      notification_status: statusByType,
     }, 200, cors);
   }
   if (claimError) return json({ error: 'Order saved but notification could not be claimed', order_id: orderId }, 500, cors);
@@ -195,9 +212,19 @@ Deno.serve(async (request) => {
     total: Number(order.total_amount) || 0,
     total_price: Number(order.total_amount) || 0,
     total_items_count: Number(order.total_items_count) || 0,
+    products: productsPayload,
+    items: productsPayload,
     notifications: {
-      admin: { whatsapp_number: ADMIN_WHATSAPP_NUMBER, message: adminMessage },
-      customer: { whatsapp_number: customerPhone, message: customerMessage },
+      admin: {
+        whatsapp_number: ADMIN_WHATSAPP_NUMBER,
+        message: adminMessage,
+        idempotency_key: `${idempotencyKey}:admin`,
+      },
+      customer: {
+        whatsapp_number: customerPhone,
+        message: customerMessage,
+        idempotency_key: `${idempotencyKey}:customer`,
+      },
     },
   };
 

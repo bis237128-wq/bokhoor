@@ -29,8 +29,11 @@ Deno.serve(async (request) => {
     return json({ error: 'Invalid JSON' }, 400);
   }
   const idempotencyKey = String(input.idempotency_key ?? '');
+  const notificationType = String(input.notification_type ?? '');
   const status = String(input.status ?? '');
-  if (!/^order\.created:.{1,128}$/.test(idempotencyKey) || !['accepted', 'sent', 'delivered', 'failed'].includes(status)) {
+  if (!/^order\.created:.{1,128}:(admin|customer)$/.test(idempotencyKey) ||
+      !['admin', 'customer'].includes(notificationType) || !idempotencyKey.endsWith(`:${notificationType}`) ||
+      !['accepted', 'sent', 'delivered', 'failed'].includes(status)) {
     return json({ error: 'Invalid status update' }, 400);
   }
 
@@ -49,7 +52,8 @@ Deno.serve(async (request) => {
   if (status === 'delivered') update.whatsapp_delivered_at = now;
 
   const { data, error } = await db.from('whatsapp_notifications').update(update)
-    .eq('idempotency_key', idempotencyKey).select('order_id').maybeSingle();
+    .eq('idempotency_key', idempotencyKey).eq('notification_type', notificationType)
+    .select('order_id').maybeSingle();
   if (error) return json({ error: 'Could not update notification status' }, 500);
   if (!data) return json({ error: 'Notification key not found' }, 404);
   return json({ ok: true });

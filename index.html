@@ -782,7 +782,11 @@
                 orderSaved = true;
                 submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> تم حفظ الطلب';
 
-                if (orderResponse.notification_status === 'failed') {
+                const notificationStatus = orderResponse.notification_status;
+                const notificationFailed = notificationStatus === 'failed' ||
+                    (notificationStatus && typeof notificationStatus === 'object' &&
+                        Object.values(notificationStatus).includes('failed'));
+                if (notificationFailed) {
                     console.error('Order saved, but notification dispatch failed.');
                     alert(`تم حفظ طلبك رقم ${savedOrder.id}، لكن تعذر إرسال الإشعار تلقائياً. سنتواصل معك قريباً.`);
                 }

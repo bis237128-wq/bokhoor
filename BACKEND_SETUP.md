@@ -6,7 +6,7 @@ The storefront is static HTML and already uses Supabase for products, reviews, a
 
 The root storefront admin login now uses Supabase Auth and requires `app_metadata.role = admin`. Configure an existing admin account through a trusted Supabase Admin API path, then inspect and verify RLS policies on all tables the dashboard can modify. Those live policies are not present in this repository, so the UI role check alone is not a substitute for RLS. The nested `bokhoor/index.html` page is a legacy static variant with no Supabase integration; its demo admin login is disabled.
 
-The migration is additive: it adds a nullable `client_request_id` and unique partial index to `orders`, and creates a private notification ledger. Existing orders are unchanged. The order ID is stored as text in the ledger because this repository does not declare the type of `orders.id`.
+The migration is additive: it adds nullable `client_request_id` and `order_items` columns plus a unique partial index to `orders`, and creates a private notification ledger with separate admin and customer rows. Existing orders are unchanged. The order ID is stored as text in the ledger because this repository does not declare the type of `orders.id`.
 
 ## Supabase setup
 
@@ -34,7 +34,7 @@ The migration is additive: it adds a nullable `client_request_id` and unique par
 
 ## Make scenario
 
-Keep the existing admin notification module and its route unchanged. The new server event retains `notifications.admin.whatsapp_number` and `notifications.admin.message`, and includes `notifications.customer.whatsapp_number`, `notifications.customer.message`, `order_id`, and `idempotency_key`.
+Keep the existing admin notification module and its route unchanged. The new server event retains `notifications.admin.whatsapp_number` and `notifications.admin.message`, and includes `notifications.customer.whatsapp_number`, `notifications.customer.message`, `products`, `items`, `order_id`, and the order-level `idempotency_key`. Each recipient also has a distinct `notifications.admin.idempotency_key` or `notifications.customer.idempotency_key` and a separate database status row.
 
 Configure the customer HTTP module as follows:
 
@@ -46,7 +46,7 @@ Configure the customer HTTP module as follows:
 - `body`: map `notifications.customer.message`
 - Capture the HTTP status and response body; map the returned message ID when present. A 2xx response means UltraMsg accepted/queued the request, not that WhatsApp delivered it.
 
-Use a Make Data Store keyed by `idempotency_key` before the customer HTTP module. Enable sequential processing for this scenario, skip an existing key, and record the key before sending. This protects against scenario retries in addition to the Supabase unique notification claim. Do not automatically retry an ambiguous timeout unless the idempotency record is checked first.
+Use a Make Data Store keyed by the recipient-specific idempotency key before each send. Enable sequential processing for this scenario, skip an existing key, and record the key before sending. Preserve the existing admin notification module, add its status callback after the module, and add the customer HTTP module plus its own callback. This protects against scenario retries in addition to the Supabase unique notification claims. Do not automatically retry an ambiguous timeout unless the idempotency record is checked first.
 
 After the UltraMsg module, call the Supabase `make-status` function at:
 
@@ -54,7 +54,7 @@ After the UltraMsg module, call the Supabase `make-status` function at:
 https://<project-ref>.supabase.co/functions/v1/make-status
 ```
 
-Send JSON fields `idempotency_key`, `status`, `message_id`, and `error`; set status to `accepted` for an UltraMsg 2xx response and `failed` otherwise. Add header `x-make-callback-secret` using the same secret as `MAKE_CALLBACK_SECRET`. If the UltraMsg instance can emit later delivery receipts, configure its status webhook to update the same function with `delivered` or `failed`; until then, the database can report API acceptance but not actual device delivery.
+Send JSON fields `idempotency_key` (the matching recipient-specific key), `notification_type` (`admin` or `customer`), `status`, `message_id`, and `error`; set status to `accepted` for an UltraMsg 2xx response and `failed` otherwise. Add header `x-make-callback-secret` using the same secret as `MAKE_CALLBACK_SECRET`. If the UltraMsg instance can emit later delivery receipts, configure its status webhook to update the same function with `delivered` or `failed` and the same notification type; until then, the database can report API acceptance but not actual device delivery.
 
 ## Verification and rollback
 
