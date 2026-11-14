@@ -1,8 +1,9 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { normalizeEgyptianMobile } from '../_shared/phone.ts';
+import { sendUltramsg } from '../_shared/ultramsg.ts';
 
 const ADMIN_WHATSAPP_NUMBER = '201278771472';
-const ORDER_FIELDS = 'id, client_request_id, customer_name, customer_phone, customer_address, order_details, order_items, total_amount, total_items_count';
+const ORDER_FIELDS = 'id, client_request_id, created_at, customer_name, customer_phone, customer_address, order_details, order_items, total_amount, total_items_count';
 
 function json(data: unknown, status = 200, headers: HeadersInit = {}) {
   return new Response(JSON.stringify(data), {
@@ -54,7 +55,6 @@ Deno.serve(async (request) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  const makeWebhookUrl = Deno.env.get('MAKE_WEBHOOK_URL');
   if (!supabaseUrl || !serviceKey) {
     return json({ error: 'Order service is not configured' }, 503, cors);
   }
@@ -109,7 +109,7 @@ Deno.serve(async (request) => {
       total += subtotal;
       totalItems += item.quantity;
       const title = String(product.title ?? 'منتج').slice(0, 200);
-      detailLines.push(`- ${title} (${item.variant}) الكمية: ${item.quantity} | السعر: ${subtotal} ج.م`);
+      detailLines.push(`- ${title} (${item.variant}) | الكمية: ${item.quantity} | سعر الوحدة: ${price} ج.م | الإجمالي: ${subtotal} ج.م`);
       productsPayload.push({
         productId: product.id,
         name: title,
@@ -152,11 +152,37 @@ Deno.serve(async (request) => {
   if (!customerPhone) return json({ error: 'Saved order has an invalid Egyptian mobile number' }, 422, cors);
   const orderId = String(order.id);
   const idempotencyKey = `order.created:${orderId}`;
+  const details = String(order.order_details ?? '').slice(0, 5000);
+  const createdAt = new Date(String(order.created_at ?? Date.now()))
+    .toLocaleString('ar-EG', { timeZone: 'Africa/Cairo' });
+  const adminMessage = `✨ طلب جديد من متجر بخور الشيخ ✨\n` +
+    `رقم الطلب: #${orderId}\n` +
+    `التاريخ والوقت: ${createdAt}\n\n` +
+    `👤 الاسم: ${String(order.customer_name ?? '').slice(0, 200)}\n` +
+    `📱 الهاتف: ${customerPhone}\n` +
+    `📍 العنوان: ${String(order.customer_address ?? '').slice(0, 1000)}\n\n` +
+    `الطلبات:\n${details}\n` +
+    `📦 إجمالي القطع المطلوبة: ${Number(order.total_items_count) || 0}\n` +
+    `💰 الإجمالي الكلي: ${Number(order.total_amount) || 0} جنيه مصري`;
+  const customerMessage = `أهلاً بك في بخور الشيخ 🌿\n\n` +
+    `تم استلام طلبك بنجاح!\nرقم الطلب: ${orderId}\n\n` +
+    `نعمل حالياً على مراجعة طلبك وتجهيزه، وسنتواصل معك قريباً لتأكيد التفاصيل.\n\n` +
+    `شكراً لثقتك بنا ❤️\nبخور الشيخ`;
+  const whatsappDraft = `مرحبًا، أريد تأكيد طلبي من متجر بخور الشيخ 🌿\n\n` +
+    `رقم الطلب: #${orderId}\n\n` +
+    `الاسم: ${String(order.customer_name ?? '').slice(0, 200)}\n` +
+    `رقم الهاتف: ${customerPhone}\n` +
+    `العنوان: ${String(order.customer_address ?? '').slice(0, 1000)}\n\n` +
+    `المنتجات:\n${details}\n\n` +
+    `الإجمالي: ${Number(order.total_amount) || 0} جنيه مصري\n\n` +
+    `شكرًا لكم ❤️`;
   const notificationClaims = (['admin', 'customer'] as const).map((notificationType) => ({
     order_id: orderId,
     notification_type: notificationType,
     idempotency_key: `${idempotencyKey}:${notificationType}`,
     whatsapp_notification_status: 'processing',
+    attempt_count: 1,
+    last_attempt_at: new Date().toISOString(),
   }));
   const { error: claimError } = await db.from('whatsapp_notifications').insert(notificationClaims);
   if (claimError?.code === '23505') {
@@ -170,90 +196,33 @@ Deno.serve(async (request) => {
       duplicate_notification: true,
       idempotency_key: idempotencyKey,
       notification_status: statusByType,
+      whatsapp_draft: whatsappDraft,
     }, 200, cors);
   }
   if (claimError) return json({ error: 'Order saved but notification could not be claimed', order_id: orderId }, 500, cors);
 
-  if (!makeWebhookUrl) {
-    await db.from('whatsapp_notifications').update({
-      whatsapp_notification_status: 'failed',
-      whatsapp_error: 'Make webhook is not configured',
+  const messages = [
+    { type: 'admin', to: ADMIN_WHATSAPP_NUMBER, body: adminMessage, key: `${idempotencyKey}:admin` },
+    { type: 'customer', to: customerPhone, body: customerMessage, key: `${idempotencyKey}:customer` },
+  ] as const;
+  const outcomes = await Promise.all(messages.map(async (message) => {
+    const result = await sendUltramsg(message.to, message.body);
+    const { error: updateError } = await db.from('whatsapp_notifications').update({
+      whatsapp_notification_status: result.status,
+      whatsapp_message_id: result.messageId,
+      whatsapp_retryable: result.retryable,
+      whatsapp_error: result.error,
       updated_at: new Date().toISOString(),
-    }).eq('order_id', orderId);
-    return json({
-      ok: true,
-      order_id: orderId,
-      duplicate_order: duplicateOrder,
-      idempotency_key: idempotencyKey,
-      notification_status: 'failed',
-    }, 200, cors);
-  }
-
-  const details = String(order.order_details ?? '').slice(0, 5000);
-  const adminMessage = `✨ طلب جديد من متجر بخور الشيخ ✨\n\n` +
-    `👤 الاسم: ${String(order.customer_name ?? '').slice(0, 200)}\n` +
-    `📱 الهاتف: ${customerPhone}\n` +
-    `📍 العنوان: ${String(order.customer_address ?? '').slice(0, 1000)}\n\n` +
-    `الطلبات:\n${details}\n` +
-    `📦 إجمالي القطع المطلوبة: ${Number(order.total_items_count) || 0}\n` +
-    `💰 الإجمالي الكلي: ${Number(order.total_amount) || 0} جنيه مصري`;
-  const customerMessage = `أهلاً بك في بخور الشيخ 🌿\n\n` +
-    `تم استلام طلبك بنجاح!\nرقم الطلب: ${orderId}\n\n` +
-    `نعمل حالياً على مراجعة طلبك وتجهيزه، وسنتواصل معك قريباً لتأكيد التفاصيل.\n\n` +
-    `شكراً لثقتك بنا ❤️\nبخور الشيخ`;
-  const payload = {
-    event: 'order.created',
-    order_id: order.id,
-    idempotency_key: idempotencyKey,
-    customer_name: order.customer_name,
-    customer_phone: customerPhone,
-    customer_address: order.customer_address,
-    order_details: details,
-    total: Number(order.total_amount) || 0,
-    total_price: Number(order.total_amount) || 0,
-    total_items_count: Number(order.total_items_count) || 0,
-    products: productsPayload,
-    items: productsPayload,
-    notifications: {
-      admin: {
-        whatsapp_number: ADMIN_WHATSAPP_NUMBER,
-        message: adminMessage,
-        idempotency_key: `${idempotencyKey}:admin`,
-      },
-      customer: {
-        whatsapp_number: customerPhone,
-        message: customerMessage,
-        idempotency_key: `${idempotencyKey}:customer`,
-      },
-    },
-  };
-
-  let status = 'failed';
-  let errorDetail: string | null = null;
-  try {
-    const response = await fetch(makeWebhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(15000),
-    });
-    status = response.ok ? 'webhook_accepted' : 'failed';
-    if (!response.ok) errorDetail = `Make webhook returned HTTP ${response.status}`;
-  } catch (error) {
-    errorDetail = error instanceof Error ? error.name : 'Make webhook request failed';
-  }
-
-  await db.from('whatsapp_notifications').update({
-    whatsapp_notification_status: status,
-    whatsapp_error: errorDetail,
-    updated_at: new Date().toISOString(),
-  }).eq('order_id', orderId);
+    }).eq('idempotency_key', message.key);
+    return { [message.type]: updateError ? 'tracking_update_failed' : result.status };
+  }));
 
   return json({
     ok: true,
     order_id: orderId,
     duplicate_order: duplicateOrder,
     idempotency_key: idempotencyKey,
-    notification_status: status,
+    notification_status: Object.assign({}, ...outcomes),
+    whatsapp_draft: whatsappDraft,
   }, 200, cors);
 });

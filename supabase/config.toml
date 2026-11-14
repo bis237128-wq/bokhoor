@@ -1,2 +1,10 @@
 [functions.make-status]
 verify_jwt = false
+
+[functions.ultramsg-status]
+# UltraMsg webhooks cannot be assumed to send arbitrary authorization headers.
+# Protect this endpoint with a high-entropy URL key stored in Function Secrets.
+verify_jwt = false
+
+[functions.retry-notification]
+verify_jwt = true

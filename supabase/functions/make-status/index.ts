@@ -44,6 +44,7 @@ Deno.serve(async (request) => {
   const now = new Date().toISOString();
   const update: Record<string, unknown> = {
     whatsapp_notification_status: status,
+    whatsapp_retryable: false,
     whatsapp_message_id: String(input.message_id ?? '').slice(0, 200) || null,
     whatsapp_error: status === 'failed' ? String(input.error ?? 'UltraMsg request failed').slice(0, 1000) : null,
     updated_at: now,
@@ -51,8 +52,19 @@ Deno.serve(async (request) => {
   if (status === 'accepted' || status === 'sent' || status === 'delivered') update.whatsapp_sent_at = now;
   if (status === 'delivered') update.whatsapp_delivered_at = now;
 
+  const { data: current, error: readError } = await db.from('whatsapp_notifications')
+    .select('whatsapp_notification_status').eq('idempotency_key', idempotencyKey)
+    .eq('notification_type', notificationType).maybeSingle();
+  if (readError) return json({ error: 'Could not read notification status' }, 500);
+  if (!current) return json({ error: 'Notification key not found' }, 404);
+  const rank: Record<string, number> = { processing: 0, unknown: 0, failed: 0, webhook_accepted: 1, accepted: 1, sent: 2, delivered: 3 };
+  if (status !== 'failed' && (rank[status] ?? 0) <= (rank[current.whatsapp_notification_status] ?? 0)) {
+    return json({ ok: true, unchanged: true });
+  }
+
   const { data, error } = await db.from('whatsapp_notifications').update(update)
     .eq('idempotency_key', idempotencyKey).eq('notification_type', notificationType)
+    .eq('whatsapp_notification_status', current.whatsapp_notification_status)
     .select('order_id').maybeSingle();
   if (error) return json({ error: 'Could not update notification status' }, 500);
   if (!data) return json({ error: 'Notification key not found' }, 404);

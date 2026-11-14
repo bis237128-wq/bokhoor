@@ -217,7 +217,7 @@
                 <strong style="color:var(--primary-gold); font-size:20px;" id="grandTotalPrice">0 ج.م</strong>
             </div>
             <button class="submit-btn" id="submitOrderBtn" onclick="sendOrderToWhatsApp()">
-                <i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> تأكيد الطلب وإرسال إشعار واتساب
+                <i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> حفظ الطلب وفتح WhatsApp
             </button>
         </div>
     </div>
@@ -378,8 +378,9 @@
         }
 
         async function fetchShareStats() {
+            if (!await hasAdminSession()) return;
             try {
-                let { count, error } = await supabaseClient.from('shares').select('*', { count: 'exact', head: true });
+                let { count, error } = await supabaseClient.from('shares').select('id', { count: 'exact', head: true });
                 if (!error && count !== null) {
                     document.getElementById('adminShareCount').innerText = count;
                 }
@@ -395,19 +396,27 @@
                 const userIp = data.ip;
 
                 if (userIp) {
-                    let { data: existingIp } = await supabaseClient.from('analytics').select('ip').eq('ip', userIp);
-                    if (!existingIp || existingIp.length === 0) {
-                        await supabaseClient.from('analytics').insert([{ ip: userIp }]);
-                    }
+                    // Visitors may add an event but must not read other visitors' IPs.
+                    await supabaseClient.from('analytics').insert([{ ip: userIp }]);
                 }
             } catch(e) {
                 console.log("Analytics IP tracking error", e);
             }
         }
 
-        async function fetchUniqueVisitorsCount() {
+        async function hasAdminSession() {
             try {
-                let { count, error } = await supabaseClient.from('analytics').select('*', { count: 'exact', head: true });
+                const { data } = await supabaseClient.auth.getSession();
+                return data?.session?.user?.app_metadata?.role === 'admin';
+            } catch(e) {
+                return false;
+            }
+        }
+
+        async function fetchUniqueVisitorsCount() {
+            if (!await hasAdminSession()) return;
+            try {
+                let { count, error } = await supabaseClient.from('analytics').select('id', { count: 'exact', head: true });
                 if (!error && count !== null) {
                     document.getElementById('adminVisitorCount').innerText = count;
                 }
@@ -418,13 +427,15 @@
 
         async function loadDataFromCloud() {
             try {
-                let { data: prodData, error: prodErr } = await supabaseClient.from('products').select('*');
+                const isAdmin = await hasAdminSession();
+                let productQuery = supabaseClient.from('products').select('*');
+                if (!isAdmin) productQuery = productQuery.eq('is_published', true);
+                let { data: prodData, error: prodErr } = await productQuery;
                 if (!prodErr && prodData && prodData.length > 0) {
                     products = prodData;
                 } else {
-                    for (let p of defaultProducts) {
-                        await supabaseClient.from('products').upsert(p);
-                    }
+                    // Local examples are display-only. Never seed the authoritative
+                    // catalog from a public browser session.
                     products = [...defaultProducts];
                 }
 
@@ -694,6 +705,7 @@
         }
 
         async function sendOrderToWhatsApp() {
+            if (window.bokhoorOrderSubmitting) return;
             const name = document.getElementById('custName').value.trim();
             const phone = document.getElementById('custPhone').value.trim();
             const address = document.getElementById('custAddress').value.trim();
@@ -709,20 +721,15 @@
                 return;
             }
 
-            let total = 0, totalItems = 0, hasItems = false;
-            let cartDetailsSummary = "";
+            let hasItems = false;
             let orderedItemsList = [];
 
             products.forEach(p => {
                 let q = quantities[p.id] || 0;
                 if(q > 0) {
                     hasItems = true;
-                    let itemTotal = q * p.price;
-                    total += itemTotal;
-                    totalItems += q;
                     
                     let vName = p.variants && p.variants[selectedVariantIndexes[p.id]] ? p.variants[selectedVariantIndexes[p.id]].name : 'النوع الأساسي';
-                    cartDetailsSummary += `- ${p.title} (${vName}) الكمية: ${q} | السعر: ${itemTotal} ج.م\n`;
                     
                     orderedItemsList.push({
                         productId: p.id,
@@ -738,17 +745,16 @@
                 return; 
             }
 
-            // Keep the existing admin WhatsApp draft flow.
-            const adminWhatsAppNumber = '201278771472';
             const submitBtn = document.getElementById('submitOrderBtn');
+            window.bokhoorOrderSubmitting = true;
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري إرسال وحفظ الطلب...';
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري حفظ الطلب...';
             let orderSaved = false;
-            // Open synchronously from the click so the browser allows the later
-            // WhatsApp redirect after the asynchronous order request.
-            const whatsappWindow = window.open('', '_blank');
-
+            let whatsappWindow = null;
             try {
+                // Reserve a popup synchronously; it remains blank unless the server confirms
+                // that the order was saved, avoiding popup blockers after the async request.
+                try { whatsappWindow = window.open('about:blank', '_blank'); } catch { whatsappWindow = null; }
                 const requestStorageKey = 'bokhoor_pending_order_request_id';
                 let clientRequestId = sessionStorage.getItem(requestStorageKey);
                 if (!clientRequestId) {
@@ -772,7 +778,6 @@
 
                 if (error || !orderResponse?.order_id) {
                     console.error('Order service request failed.');
-                    if (whatsappWindow) whatsappWindow.close();
                     alert('تعذر تأكيد حفظ الطلب الآن. برجاء المحاولة مرة أخرى بعد لحظات.');
                     return;
                 }
@@ -785,19 +790,10 @@
                 const notificationStatus = orderResponse.notification_status;
                 const notificationFailed = notificationStatus === 'failed' ||
                     (notificationStatus && typeof notificationStatus === 'object' &&
-                        Object.values(notificationStatus).includes('failed'));
+                        Object.values(notificationStatus).some(status => ['failed', 'unknown', 'tracking_update_failed'].includes(status)));
                 if (notificationFailed) {
                     console.error('Order saved, but notification dispatch failed.');
-                    alert(`تم حفظ طلبك رقم ${savedOrder.id}، لكن تعذر إرسال الإشعار تلقائياً. سنتواصل معك قريباً.`);
                 }
-
-                const adminOrderMessage = `✨ طلب جديد من متجر بخور الشيخ ✨\n\n` +
-                    `👤 الاسم: ${name}\n` +
-                    `📱 الهاتف: ${phone}\n` +
-                    `📍 العنوان: ${address}\n\n` +
-                    `الطلبات:\n${cartDetailsSummary}\n` +
-                    `📦 إجمالي القطع المطلوبة: ${totalItems}\n` +
-                    `💰 الإجمالي الكلي: ${total} جنيه مصري`;
 
                 // خصم المخزون من قاعدة البيانات
                 const stockUpdateTasks = orderedItemsList.map(async (item) => {
@@ -821,27 +817,40 @@
                     }
                 });
 
-                const adminMessage = adminOrderMessage;
-                const whatsappUrl = `https://wa.me/${adminWhatsAppNumber}?text=${encodeURIComponent(adminMessage)}`;
-                if (whatsappWindow) {
+                quantities = {};
+                renderProducts();
+                calcTotal();
+
+                const draft = typeof orderResponse.whatsapp_draft === 'string' ? orderResponse.whatsapp_draft : '';
+                if (!draft) {
+                    if (whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
+                    alert(`تم حفظ طلبك رقم ${savedOrder.id}، لكن تعذر تجهيز رسالة WhatsApp. تواصل معنا لإكمال التأكيد.`);
+                    return;
+                }
+                const whatsappUrl = `https://wa.me/201278771472?text=${encodeURIComponent(draft)}`;
+                if (whatsappWindow && !whatsappWindow.closed) {
                     whatsappWindow.location.href = whatsappUrl;
+                    alert(`تم حفظ طلبك رقم ${savedOrder.id}. افتح WhatsApp واضغط زر الإرسال لإكمال تأكيد الطلب.`);
                 } else {
-                    console.warn('WhatsApp popup was blocked; opening the admin order draft in this tab.');
+                    alert(`تم حفظ طلبك رقم ${savedOrder.id}. سنفتح WhatsApp الآن؛ اضغط زر الإرسال لإكمال تأكيد الطلب.`);
                     window.location.assign(whatsappUrl);
                 }
 
             } catch (err) {
-                if (whatsappWindow && !orderSaved) whatsappWindow.close();
                 console.error(orderSaved ? 'Order saved, but post-save processing failed:' : 'Order submission failed:', err);
+                if (!orderSaved && whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
                 if (!orderSaved) {
                     alert('حدث خطأ أثناء إرسال الطلب، برجاء المحاولة مرة أخرى.');
                 }
             } finally {
                 if (!orderSaved) {
+                    window.bokhoorOrderSubmitting = false;
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> تأكيد الطلب وإرسال إشعار واتساب';
+                    submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> حفظ الطلب وفتح WhatsApp';
                 } else {
-                    submitBtn.disabled = true;
+                    window.bokhoorOrderSubmitting = false;
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> حفظ الطلب وفتح WhatsApp';
                 }
             }
         }
@@ -881,6 +890,7 @@
 
             document.getElementById('adminLoginForm').style.display = 'none';
             document.getElementById('adminControls').style.display = 'block';
+            await loadDataFromCloud();
             fetchUniqueVisitorsCount();
             fetchShareStats();
             renderAdminLists();

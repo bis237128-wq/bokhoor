@@ -639,46 +639,8 @@
 
         // إرسال الطلب عبر الواتساب للرقم المطلوب
         function sendOrderToWhatsApp() {
-            const name = document.getElementById('custName').value.trim();
-            const phone = document.getElementById('custPhone').value.trim();
-            const address = document.getElementById('custAddress').value.trim();
-
-            if (!name || !phone || !address) {
-                alert('برجاء كتابة الاسم، رقم الهاتف، والعنوان التفصيلي لإتمام الطلب.');
-                return;
-            }
-
-            let orderItemsText = "";
-            let grandTotal = 0;
-            let hasItems = false;
-
-            products.forEach(prod => {
-                const qty = selectedQuantities[prod.id] || 0;
-                if (qty > 0) {
-                    hasItems = true;
-                    const itemTotal = qty * prod.price;
-                    grandTotal += itemTotal;
-                    orderItemsText += `• ${prod.title}\n  - الرائحة: ${selectedScents[prod.id]}\n  - الكمية: ${qty} عبوة | السعر: ${itemTotal} ج.م\n\n`;
-                }
-            });
-
-            if (!hasItems) {
-                alert('برجاء تحديد كمية المنتجات المطلوبة أولاً (+).');
-                return;
-            }
-
-            const message = `✨ *طلب جديد من موقع بخور الشيخ* ✨\n\n` +
-                `👤 *بيانات العميل:*\n` +
-                `• الاسم: ${name}\n` +
-                `• الهاتف: ${phone}\n` +
-                `• العنوان: ${address}\n\n` +
-                `📦 *تفاصيل المنتجات المطلوبة:*\n${orderItemsText}` +
-                `💰 *الإجمالي النهائي:* ${grandTotal} جنيه مصري\n\n` +
-                `يرجى تأكيد الطلب وتجهيز الشحن.`;
-
-            const targetPhone = "201278771472"; // رقم الواتساب المعتمد
-            const encodedUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
-            window.open(encodedUrl, '_blank');
+            alert('تم نقل الطلبات إلى المتجر الرئيسي الآمن. سيتم تحويلك الآن.');
+            window.location.assign('../index.html#orderBox');
         }
 
         // Admin Modal Controls
