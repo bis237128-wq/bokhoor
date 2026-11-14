@@ -7,6 +7,8 @@
     <!-- Google Fonts & FontAwesome icons -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary-gold: #d4af37;
@@ -180,7 +182,6 @@
             height: 230px;
             background-color: #111;
             overflow: hidden;
-            cursor: pointer;
         }
 
         .product-img-box img {
@@ -250,10 +251,6 @@
             cursor: pointer;
         }
 
-        .scent-select:focus {
-            border-color: var(--primary-gold);
-        }
-
         .quantity-control {
             display: flex;
             align-items: center;
@@ -274,12 +271,6 @@
             font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .qty-btn:hover {
-            background: var(--primary-gold);
-            color: #000;
         }
 
         .qty-input {
@@ -325,10 +316,6 @@
             outline: none;
         }
 
-        .form-group input:focus, .form-group textarea:focus {
-            border-color: var(--primary-gold);
-        }
-
         .total-summary {
             background-color: #0f0f0f;
             padding: 15px;
@@ -360,14 +347,9 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            transition: background 0.3s;
         }
 
-        .whatsapp-submit-btn:hover {
-            background-color: #1ebc57;
-        }
-
-        /* Modals & Dashboard Overlay */
+        /* Modal Overlay */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -401,9 +383,6 @@
             cursor: pointer;
         }
 
-        .close-modal:hover { color: #fff; }
-
-        /* Footer */
         footer {
             text-align: center;
             padding: 20px;
@@ -417,7 +396,6 @@
 </head>
 <body>
 
-    <!-- Header -->
     <header>
         <div class="brand">
             <i class="fa-solid fa-fire-flame-curved brand-icon"></i>
@@ -435,20 +413,17 @@
         </div>
     </header>
 
-    <!-- Hero -->
     <section class="hero">
         <h2>تشكيلة بخور الشيخ والأنواع الفاخرة</h2>
         <p>اختر العبوة والرائحة المفضلة لديك وسنصلك فوراً عبر خدمة الطلب المباشر</p>
     </section>
 
-    <!-- Main Container -->
     <div class="container">
         <h3 class="section-title"><i class="fa-solid fa-box-open"></i> منتجاتنا المتاحة</h3>
         <div class="products-grid" id="productsGrid">
-            <!-- المنتجات تُحمل تلقائياً هنا -->
+            <!-- سيتم تحميل المنتجات هنا -->
         </div>
 
-        <!-- Order Form Section -->
         <div class="order-section" id="orderSection">
             <h3 class="section-title" style="border:none; padding:0; margin-bottom:15px;">
                 <i class="fa-solid fa-file-invoice"></i> إتمام الطلب الشحن والتوصيل
@@ -480,125 +455,94 @@
         </div>
     </div>
 
-    <!-- Admin Panel Modal -->
+    <!-- Admin Modal -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-card">
             <i class="fa-solid fa-xmark close-modal" onclick="closeAdminModal()"></i>
-            
-            <!-- Login State -->
             <div id="adminLoginForm">
                 <h3 style="color:var(--primary-gold); margin-bottom:15px; text-align:center;">دخول لوحة تحكم المسؤول</h3>
                 <div class="form-group" style="margin-bottom:12px;">
-                    <label>اسم المستخدم (Username)</label>
+                    <label>اسم المستخدم</label>
                     <input type="text" id="adminUser" placeholder="admin">
                 </div>
                 <div class="form-group" style="margin-bottom:20px;">
-                    <label>كلمة المرور (Password)</label>
+                    <label>كلمة المرور</label>
                     <input type="password" id="adminPass" placeholder="••••••••">
                 </div>
                 <button class="whatsapp-submit-btn" style="background:var(--primary-gold); color:#000;" onclick="adminLogin()">دخول</button>
             </div>
-
-            <!-- Dashboard Controls State -->
             <div id="adminDashboardControls" style="display:none;">
-                <h3 style="color:var(--primary-gold); margin-bottom:15px;">إدارة المنتجات والتعديل</h3>
-                <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">يمكنك تعديل الأسعار أو إضافة منتج جديد بكل سهولة:</p>
-                
-                <div class="form-group" style="margin-bottom:10px;">
-                    <label>اسم المنتج</label>
-                    <input type="text" id="newProdName">
-                </div>
-                <div class="form-group" style="margin-bottom:10px;">
-                    <label>السعر (جنيه)</label>
-                    <input type="number" id="newProdPrice">
-                </div>
-                <div class="form-group" style="margin-bottom:10px;">
-                    <label>رابط الصورة</label>
-                    <input type="text" id="newProdImg">
-                </div>
-                <div class="form-group" style="margin-bottom:15px;">
-                    <label>الروائح (مفصولة بـ فاصلة ,)</label>
-                    <input type="text" id="newProdScents" placeholder="أرابيسك, روح المسك, جذور العود">
-                </div>
-                
-                <button class="whatsapp-submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:10px;" onclick="addNewProductFromAdmin()">إضافة المنتج فوراً</button>
-                <button class="whatsapp-submit-btn" style="background:#555; color:#fff;" onclick="adminLogout()">تسجيل الخروج</button>
+                <h3 style="color:var(--primary-gold); margin-bottom:15px;">إدارة المنتجات</h3>
+                <div class="form-group" style="margin-bottom:10px;"><label>اسم المنتج</label><input type="text" id="newProdName"></div>
+                <div class="form-group" style="margin-bottom:10px;"><label>السعر</label><input type="number" id="newProdPrice"></div>
+                <div class="form-group" style="margin-bottom:10px;"><label>رابط الصورة</label><input type="text" id="newProdImg"></div>
+                <div class="form-group" style="margin-bottom:15px;"><label>الروائح (مفصولة بفاصلة)</label><input type="text" id="newProdScents"></div>
+                <button class="whatsapp-submit-btn" style="background:var(--primary-gold); color:#000; margin-bottom:10px;" onclick="addNewProductToSupabase()">إضافة المنتج</button>
+                <button class="whatsapp-submit-btn" style="background:#555; color:#fff;" onclick="adminLogout()">خروج</button>
             </div>
-
         </div>
     </div>
 
-    <!-- Footer -->
     <footer>
-        <p>جميع الحقوق محفوظة لمتجر © بخور الشيخ 2026 | تطوير آمن ومستقل 100%</p>
+        <p>جميع الحقوق محفوظة لمتجر © بخور الشيخ 2026</p>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- JavaScript Script Code -->
     <script>
-        // المنتجات الأساسية الافتراضية للبدء
-        const defaultProducts = [
-            {
-                id: 1,
-                title: "بخور أرابيسك أعواد 5 ساعات",
-                price: 75,
-                desc: "أعواد بخور جالاكسي سميكة فاخرة بتركيز قوي تدوم حتى 5 ساعات متواصلة.",
-                img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg",
-                scents: ["أرابيسك كلاسيك", "روح المسك (العلبة الحمراء)", "جذور العود", "نفائس العنبر", "أنسام الأندلس"]
-            },
-            {
-                id: 2,
-                title: "بخور أرابيسك أعواد 3 ساعات (ميني)",
-                price: 50,
-                desc: "أعواد بخور ميني جالاكسي الفاخرة ذات رائحة نفاذة تدوم حتى 3 ساعات.",
-                img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg",
-                scents: ["أرابيسك ميني", "روح المسك (العلبة الموف)", "جذور العود", "أنسام مكة", "عبير الورد"]
-            },
-            {
-                id: 3,
-                title: "البخور القمع الهرمي (كنوز الماضي - 15 قمع)",
-                price: 70,
-                desc: "عبوة تحتوي على 15 قمع بخور مخروطي ذاتي الاشتعال مدة اشتعال القمع 45 دقيقة مع قاعدة للتثبيت.",
-                img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg",
-                scents: ["أقماع أرابيسك الهرمية", "أقماع باقة زهور (المزخرفة)", "أقماع روح المسك", "أقماع جذور العود"]
-            }
-        ];
+        // إعدادات اتصال Supabase
+        const SUPABASE_URL = 'https://zhppvfabbjffmjgsiaza.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpocHB2ZmFiYmpmZm1qZ3NpemEiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczMTY5...'; // ضع مفتاح الـ anon الصحيح هنا لو لم يكن مسجلاً تلقائياً
+        
+        const supabaseClient = supabase.createClient("https://zhppvfabbjffmjgsiaza.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpocHB2ZmFiYmpmZm1qZ3NpemEiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczMTY5NDU2Nn0.YOUR_KEY_HERE");
 
-        let products = defaultProducts;
-        const cloudUrl = 'https://zhppvfabbjffmjgsiaza.supabase.co';
-        const cloudKey = 'sb_publishable_k6SigiKq0iAPzvxPwyW8LQ_4bdqEVEq';
-        const cloud = window.supabase ? window.supabase.createClient(cloudUrl, cloudKey) : null;
-        let cloudReady = false;
+        let products = [];
         let selectedQuantities = {};
         let selectedScents = {};
 
-        // تحميل وتأطير عرض المنتجات
+        // جلب المنتجات من Supabase
+        async function fetchProducts() {
+            try {
+                const { data, error } = await supabaseClient.from('products').select('*');
+                if (error) throw error;
+                
+                if (data && data.length > 0) {
+                    products = data;
+                } else {
+                    // منتجات افتراضية في حال الجدول فارغ
+                    products = [
+                        { id: 1, title: "بخور أرابيسك أعواد 5 ساعات", price: 75, desc: "أعواد بخور فاخرة تدوم طويلاً.", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", scents: ["أرابيسك كلاسيك", "روح المسك"] }
+                    ];
+                }
+                renderProducts();
+            } catch (err) {
+                console.error("خطأ في جلب المنتجات:", err);
+            }
+        }
+
         function renderProducts() {
             const grid = document.getElementById('productsGrid');
             grid.innerHTML = '';
 
             products.forEach(prod => {
                 if(!selectedQuantities[prod.id]) selectedQuantities[prod.id] = 0;
-                if(!selectedScents[prod.id]) selectedScents[prod.id] = prod.scents[0];
+                let scentsList = Array.isArray(prod.scents) ? prod.scents : (typeof prod.scents === 'string' ? prod.scents.split(',') : ["أرابيسك أصلي"]);
+                if(!selectedScents[prod.id]) selectedScents[prod.id] = scentsList[0];
 
                 const card = document.createElement('div');
                 card.className = 'product-card';
                 card.innerHTML = `
                     <div class="product-img-box">
-                        <img src="${prod.img}" alt="${prod.title}">
+                        <img src="${prod.img || 'https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg'}" alt="${prod.title}">
                         <div class="price-tag">${prod.price} ج.م</div>
                     </div>
                     <div class="product-details">
                         <h4 class="product-title">${prod.title}</h4>
-                        <p class="product-desc">${prod.desc}</p>
-                        
+                        <p class="product-desc">${prod.desc || ''}</p>
                         <div class="scent-select-group">
                             <label><i class="fa-solid fa-spray-can"></i> اختر الرائحة / اللون:</label>
-                            <select class="scent-select" onchange="updateScent(${prod.id}, this.value)">
-                                ${prod.scents.map(s => `<option value="${s}">${s}</option>`).join('')}
+                            <select class="scent-select" onchange="selectedScents[${prod.id}] = this.value">
+                                ${scentsList.map(s => `<option value="${s.trim()}">${s.trim()}</option>`).join('')}
                             </select>
                         </div>
-
                         <div class="quantity-control">
                             <button class="qty-btn" onclick="changeQty(${prod.id}, -1)">-</button>
                             <input type="text" class="qty-input" id="qty-${prod.id}" value="${selectedQuantities[prod.id]}" readonly>
@@ -609,10 +553,6 @@
                 grid.appendChild(card);
             });
             updateGrandTotal();
-        }
-
-        function updateScent(prodId, scent) {
-            selectedScents[prodId] = scent;
         }
 
         function changeQty(prodId, delta) {
@@ -627,13 +567,11 @@
         function updateGrandTotal() {
             let grandTotal = 0;
             let totalItemsCount = 0;
-
             products.forEach(prod => {
                 const qty = selectedQuantities[prod.id] || 0;
                 grandTotal += qty * prod.price;
                 totalItemsCount += qty;
             });
-
             document.getElementById('cartCount').innerText = totalItemsCount;
             document.getElementById('grandTotalPrice').innerText = grandTotal + " جنيه مصري";
         }
@@ -642,8 +580,7 @@
             document.getElementById('orderSection').scrollIntoView({ behavior: 'smooth' });
         }
 
-        // إرسال الطلب عبر الواتساب للرقم المطلوب
-        function sendOrderToWhatsApp() {
+        async function sendOrderToWhatsApp() {
             const name = document.getElementById('custName').value.trim();
             const phone = document.getElementById('custPhone').value.trim();
             const address = document.getElementById('custAddress').value.trim();
@@ -656,6 +593,7 @@
             let orderItemsText = "";
             let grandTotal = 0;
             let hasItems = false;
+            let orderDetailsArray = [];
 
             products.forEach(prod => {
                 const qty = selectedQuantities[prod.id] || 0;
@@ -663,7 +601,8 @@
                     hasItems = true;
                     const itemTotal = qty * prod.price;
                     grandTotal += itemTotal;
-                    orderItemsText += `• ${prod.title}\n  - الرائحة: ${selectedScents[prod.id]}\n  - الكمية: ${qty} عبوة | السعر: ${itemTotal} ج.م\n\n`;
+                    orderItemsText += `• ${prod.title}\n  - الرائحة: ${selectedScents[prod.id]}\n  - الكمية: ${qty} | السعر: ${itemTotal} ج.م\n\n`;
+                    orderDetailsArray.push({ product: prod.title, scent: selectedScents[prod.id], qty, total: itemTotal });
                 }
             });
 
@@ -672,39 +611,31 @@
                 return;
             }
 
-            const message = `✨ *طلب جديد من موقع بخور الشيخ* ✨\n\n` +
-                `👤 *بيانات العميل:*\n` +
-                `• الاسم: ${name}\n` +
-                `• الهاتف: ${phone}\n` +
-                `• العنوان: ${address}\n\n` +
-                `📦 *تفاصيل المنتجات المطلوبة:*\n${orderItemsText}` +
-                `💰 *الإجمالي النهائي:* ${grandTotal} جنيه مصري\n\n` +
-                `يرجى تأكيد الطلب وتجهيز الشحن.`;
+            // حفظ الطلب في جدول orders بـ Supabase
+            try {
+                const { error } = await supabaseClient.from('orders').insert([
+                    { customer_name: name, phone: phone, address: address, items: orderDetailsArray, total_price: grandTotal }
+                ]);
+                if (error) console.error("خطأ تخزين الطلب:", error);
+            } catch (err) {
+                console.error("فشل حفظ الطلب بالسحابية:", err);
+            }
 
-            const targetPhone = "201278771472"; // رقم الواتساب المعتمد
-            const encodedUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
-            window.open(encodedUrl, '_blank');
+            const message = `✨ *طلب جديد من موقع بخور الشيخ* ✨\n\n👤 *بيانات العميل:*\n• الاسم: ${name}\n• الهاتف: ${phone}\n• العنوان: ${address}\n\n📦 *تفاصيل المنتجات:*\n${orderItemsText}💰 *الإجمالي النهائي:* ${grandTotal} جنيه مصري`;
+            
+            const targetPhone = "201278771472";
+            window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`, '_blank');
         }
 
-        // Admin Modal Controls
-        function openAdminModal() {
-            document.getElementById('adminModal').style.display = 'flex';
-        }
-
-        function closeAdminModal() {
-            document.getElementById('adminModal').style.display = 'none';
-        }
+        function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; }
+        function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
 
         function adminLogin() {
-            const user = document.getElementById('adminUser').value;
-            const pass = document.getElementById('adminPass').value;
-
-            // يمكنك تغيير اسم المستخدم وكلمة المرور من هنا
-            if (user === 'admin' && pass === '123456') {
+            if (document.getElementById('adminUser').value === 'admin' && document.getElementById('adminPass').value === '123456') {
                 document.getElementById('adminLoginForm').style.display = 'none';
                 document.getElementById('adminDashboardControls').style.display = 'block';
             } else {
-                alert('اسم المستخدم أو كلمة المرور غير صحيحة!');
+                alert('بيانات الدخول غير صحيحة!');
             }
         }
 
@@ -714,61 +645,34 @@
             closeAdminModal();
         }
 
-        async function addNewProductFromAdmin() {
+        async function addNewProductToSupabase() {
             const name = document.getElementById('newProdName').value;
             const price = parseFloat(document.getElementById('newProdPrice').value);
             const img = document.getElementById('newProdImg').value || "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
             const scentsStr = document.getElementById('newProdScents').value;
 
             if (!name || isNaN(price)) {
-                alert('يرجى أدخال اسم المنتج والسعر بشكل صحيح.');
+                alert('يرجى إدخال اسم المنتج والسعر.');
                 return;
             }
 
             const scents = scentsStr ? scentsStr.split(',').map(s => s.trim()) : ["أرابيسك أصلي"];
 
-            const newProd = {
-                id: Date.now(),
-                title: name,
-                price: price,
-                desc: "منتج فاخر من بخور الشيخ",
-                img: img,
-                scents: scents
-            };
-
-            products.push(newProd);
-            if (cloud && cloudReady) {
-                const { error } = await cloud.from('products').insert({
-                    id: newProd.id, title: newProd.title, price: newProd.price, badge: 'جديد',
-                    variants: scents.map(name => ({ name, img, desc: newProd.desc }))
-                });
-                if (error) { alert('تعذر حفظ المنتج سحابياً: ' + error.message); return; }
-            } else {
-                localStorage.setItem('elsheikh_products', JSON.stringify(products));
+            try {
+                const { error } = await supabaseClient.from('products').insert([
+                    { title: name, price: price, desc: "منتج فاخر من بخور الشيخ", img: img, scents: scents }
+                ]);
+                if (error) throw error;
+                alert('تمت إضافة المنتج بنجاح للقاعدة!');
+                closeAdminModal();
+                fetchProducts();
+            } catch (err) {
+                alert('حدث خطأ أثناء إضافة المنتج: ' + err.message);
             }
-            renderProducts();
-            alert('تمت إضافة المنتج بنجاح!');
-            closeAdminModal();
         }
 
-        // تحميل المنتجات من Supabase مع إبقاء الافتراضية عند تعذر الاتصال.
-        async function loadCloudProducts() {
-            if (!cloud) return;
-            const { data, error } = await cloud.from('products').select('id,title,price,variants').order('id', { ascending: true });
-            if (error) { console.error('Supabase products load failed:', error); return; }
-            if (Array.isArray(data) && data.length) {
-                products = data.map(row => {
-                    const variants = Array.isArray(row.variants) ? row.variants : [];
-                    const first = variants[0] || {};
-                    return { id: Number(row.id), title: row.title || 'منتج', price: Number(row.price) || 0, desc: first.desc || 'منتج فاخر من بخور الشيخ', img: first.img || '', scents: variants.length ? variants.map(v => v.name || 'النوع الأساسي') : ['النوع الأساسي'] };
-                });
-            }
-            cloudReady = true; renderProducts();
-        }
-
-        // تشغيل البداية
-        renderProducts();
-        loadCloudProducts();
+        // تشغيل الجلب عند فتح الصفحة
+        fetchProducts();
     </script>
 </body>
 </html>
