@@ -679,8 +679,7 @@
             document.getElementById('grandTotalPrice').innerText = total + ' ج.م';
         }
 
-        // Normalize only Egyptian mobile numbers. Keep this value separate from
-        // the customer's original input, which is retained for order records.
+        // Normalize Egyptian mobile numbers before storing them in orders.
         function normalizeEgyptianMobile(value) {
             let digits = String(value || '').replace(/[\s\-()]/g, '');
             if (digits.startsWith('+')) digits = digits.slice(1);
@@ -739,15 +738,14 @@
                 return; 
             }
 
-            // Send the order to the store admin; keep the customer's normalized
-            // phone in the Make payload for customer notifications.
+            // Keep the existing admin WhatsApp draft flow.
             const adminWhatsAppNumber = '201278771472';
             const submitBtn = document.getElementById('submitOrderBtn');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري إرسال وحفظ الطلب...';
             let orderSaved = false;
             // Open synchronously from the click so the browser allows the later
-            // WhatsApp redirect after the asynchronous Supabase insert.
+            // WhatsApp redirect after the asynchronous order request.
             const whatsappWindow = window.open('', '_blank');
 
             try {
