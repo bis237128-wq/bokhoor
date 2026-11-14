@@ -675,21 +675,6 @@
             document.getElementById('grandTotalPrice').innerText = total + ' ج.م';
         }
 
-        // Normalize only Egyptian mobile numbers. Keep this value separate from
-        // the customer's original input, which is retained for order records.
-        function normalizeEgyptianMobile(value) {
-            let digits = String(value || '').replace(/[\s\-()]/g, '');
-            if (digits.startsWith('+')) digits = digits.slice(1);
-            if (!/^\d+$/.test(digits)) return null;
-
-            if (digits.startsWith('00')) digits = digits.slice(2);
-            if (digits.startsWith('0')) digits = `20${digits.slice(1)}`;
-            else if (/^1[0125]/.test(digits)) digits = `20${digits}`;
-
-            // Egyptian mobile: +20 followed by 10, 11, or 12 digits beginning 10/11/12/15.
-            return /^20(10|11|12|15)\d{8}$/.test(digits) ? digits : null;
-        }
-
         async function sendOrderToWhatsApp() {
             const name = document.getElementById('custName').value.trim();
             const phone = document.getElementById('custPhone').value.trim();
@@ -698,12 +683,6 @@
             if(!name || !phone || !address) { 
                 alert('برجاء كتابة كافة بيانات الشحن والتوصيل (الاسم، الهاتف، والعنوان)'); 
                 return; 
-            }
-
-            const normalizedCustomerPhone = normalizeEgyptianMobile(phone);
-            if (!normalizedCustomerPhone) {
-                alert('برجاء إدخال رقم موبايل مصري صحيح (مثال: 01xxxxxxxxx أو +201xxxxxxxxx).');
-                return;
             }
 
             let total = 0, totalItems = 0, hasItems = false;
@@ -746,7 +725,12 @@
             // Send the order to the store admin; keep the customer's normalized
             // phone in the Make payload for customer notifications.
             const adminWhatsAppNumber = '201278771472';
-            const customerWhatsAppNumber = normalizedCustomerPhone;
+            let customerWhatsAppNumber = phone.replace(/\D/g, '');
+            if (customerWhatsAppNumber.startsWith('00')) {
+                customerWhatsAppNumber = customerWhatsAppNumber.slice(2);
+            } else if (customerWhatsAppNumber.startsWith('0')) {
+                customerWhatsAppNumber = `20${customerWhatsAppNumber.slice(1)}`;
+            }
 
             const submitBtn = document.getElementById('submitOrderBtn');
             submitBtn.disabled = true;
@@ -758,7 +742,7 @@
 
             try {
                 // حفظ الطلب في Supabase أولاً
-                const { data: savedOrder, error } = await supabaseClient
+                const { error } = await supabaseClient
                     .from('orders')
                     .insert([
                         { 
@@ -769,9 +753,7 @@
                             order_details: cartDetailsSummary,
                             total_items_count: totalItems
                         }
-                    ])
-                    .select('id')
-                    .single();
+                    ]);
 
                 if (error) {
                     console.error('Supabase order insert failed:', error);
@@ -784,6 +766,8 @@
                 submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> تم حفظ الطلب وإرسال الإشعارات';
 
                 console.log('Supabase order insert succeeded:', {
+                    customer_name: name,
+                    customer_phone: phone,
                     total: total,
                     item_count: totalItems
                 });
@@ -796,16 +780,15 @@
                     `📦 إجمالي القطع المطلوبة: ${totalItems}\n` +
                     `💰 الإجمالي الكلي: ${total} جنيه مصري`;
 
-                const customerConfirmationMessage = `أهلاً بك في بخور الشيخ 🌿\n\n` +
-                    `تم استلام طلبك بنجاح!\n` +
-                    (savedOrder?.id ? `رقم الطلب: ${savedOrder.id}\n\n` : '\n') +
-                    `نعمل حالياً على مراجعة طلبك وتجهيزه، وسنتواصل معك قريباً لتأكيد التفاصيل.\n\n` +
-                    `شكراً لثقتك بنا ❤️\nبخور الشيخ`;
+                const customerConfirmationMessage = `✨ تم استلام طلبك من متجر بخور الشيخ ✨\n\n` +
+                    `👤 الاسم: ${name}\n` +
+                    `📍 العنوان: ${address}\n\n` +
+                    `ملخص الطلب:\n${cartDetailsSummary}\n` +
+                    `📦 إجمالي القطع: ${totalItems}\n` +
+                    `💰 الإجمالي الكلي: ${total} جنيه مصري`;
 
                 const makeOrderPayload = {
                     event: 'order.created',
-                    order_id: savedOrder?.id ?? null,
-                    idempotency_key: savedOrder?.id ? `order.created:${savedOrder.id}` : null,
                     customer_name: name,
                     customer_phone: customerWhatsAppNumber,
                     customer_phone_input: phone,
@@ -832,13 +815,16 @@
 
                     try {
                         console.log('Sending order to Make.com webhook:', {
+                            admin_whatsapp_number: payload.notifications.admin.whatsapp_number,
+                            customer_whatsapp_number: payload.notifications.customer.whatsapp_number,
                             products: payload.products.length,
                             total: payload.total_price
                         });
                         const webhookResponse = await fetch('https://hook.eu1.make.com/1k4l3mxlwyfldhuid3qd7w3l1utx3ocn', {
                             method: 'POST',
-                            // JSON content type lets Make parse the webhook as structured data.
-                            headers: { 'Content-Type': 'application/json' },
+                            // text/plain is a CORS-simple content type, so browsers
+                            // send the POST directly instead of blocking it at OPTIONS.
+                            headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
                             body: JSON.stringify(payload),
                             signal: controller.signal,
                             keepalive: true
@@ -847,6 +833,8 @@
                         if (webhookResponse.ok) {
                             console.log('Make.com webhook succeeded:', {
                                 status: webhookResponse.status,
+                                admin_whatsapp_number: payload.notifications.admin.whatsapp_number,
+                                customer_whatsapp_number: payload.notifications.customer.whatsapp_number,
                                 products: payload.products.length,
                                 total: payload.total_price
                             });
