@@ -229,9 +229,13 @@
             
             <div id="adminLoginForm">
                 <h3 style="color:var(--primary-gold); margin-bottom:15px; text-align:center;">دخول لوحة تحكم المالك</h3>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>البريد الإلكتروني للمسؤول</label>
+                    <input type="email" id="adminEmail" autocomplete="username" placeholder="البريد الإلكتروني">
+                </div>
                 <div class="form-group" style="margin-bottom:20px;">
                     <label>كلمة المرور</label>
-                    <input type="password" id="adminPass" placeholder="أدخل كلمة المرور">
+                    <input type="password" id="adminPass" autocomplete="current-password" placeholder="أدخل كلمة المرور">
                 </div>
                 <button class="submit-btn" style="background:var(--primary-gold); color:#000;" onclick="adminLogin()">دخول</button>
             </div>
@@ -709,7 +713,6 @@
             let total = 0, totalItems = 0, hasItems = false;
             let cartDetailsSummary = "";
             let orderedItemsList = [];
-            let webhookProducts = [];
 
             products.forEach(p => {
                 let q = quantities[p.id] || 0;
@@ -725,15 +728,8 @@
                     orderedItemsList.push({
                         productId: p.id,
                         orderedQty: q,
-                        currentStock: p.stock_quantity !== undefined ? p.stock_quantity : 50
-                    });
-                    webhookProducts.push({
-                        productId: p.id,
-                        name: p.title,
-                        variant: vName,
-                        quantity: q,
-                        unitPrice: p.price,
-                        subtotal: itemTotal
+                        currentStock: p.stock_quantity !== undefined ? p.stock_quantity : 50,
+                        variant: vName
                     });
                 }
             });
@@ -746,8 +742,6 @@
             // Send the order to the store admin; keep the customer's normalized
             // phone in the Make payload for customer notifications.
             const adminWhatsAppNumber = '201278771472';
-            const customerWhatsAppNumber = normalizedCustomerPhone;
-
             const submitBtn = document.getElementById('submitOrderBtn');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري إرسال وحفظ الطلب...';
@@ -757,36 +751,43 @@
             const whatsappWindow = window.open('', '_blank');
 
             try {
-                // حفظ الطلب في Supabase أولاً
-                const { data: savedOrder, error } = await supabaseClient
-                    .from('orders')
-                    .insert([
-                        { 
-                            customer_name: name, 
-                            customer_phone: phone, 
-                            customer_address: address, 
-                            total_amount: total,
-                            order_details: cartDetailsSummary,
-                            total_items_count: totalItems
-                        }
-                    ])
-                    .select('id')
-                    .single();
+                const requestStorageKey = 'bokhoor_pending_order_request_id';
+                let clientRequestId = sessionStorage.getItem(requestStorageKey);
+                if (!clientRequestId) {
+                    clientRequestId = crypto.randomUUID();
+                    sessionStorage.setItem(requestStorageKey, clientRequestId);
+                }
 
-                if (error) {
-                    console.error('Supabase order insert failed:', error);
+                const { data: orderResponse, error } = await supabaseClient.functions.invoke('create-order', {
+                    body: {
+                        client_request_id: clientRequestId,
+                        customer_name: name,
+                        customer_phone: normalizedCustomerPhone,
+                        customer_address: address,
+                        items: orderedItemsList.map(({ productId, orderedQty, variant }) => ({
+                            product_id: productId,
+                            quantity: orderedQty,
+                            variant
+                        }))
+                    }
+                });
+
+                if (error || !orderResponse?.order_id) {
+                    console.error('Order service request failed.');
                     if (whatsappWindow) whatsappWindow.close();
-                    alert('حدث خطأ أثناء حفظ الطلب سحابياً، برجاء المحاولة مرة أخرى.');
+                    alert('تعذر تأكيد حفظ الطلب الآن. برجاء المحاولة مرة أخرى بعد لحظات.');
                     return;
                 }
 
+                const savedOrder = { id: orderResponse.order_id };
+                sessionStorage.removeItem(requestStorageKey);
                 orderSaved = true;
-                submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> تم حفظ الطلب وإرسال الإشعارات';
+                submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> تم حفظ الطلب';
 
-                console.log('Supabase order insert succeeded:', {
-                    total: total,
-                    item_count: totalItems
-                });
+                if (orderResponse.notification_status === 'failed') {
+                    console.error('Order saved, but notification dispatch failed.');
+                    alert(`تم حفظ طلبك رقم ${savedOrder.id}، لكن تعذر إرسال الإشعار تلقائياً. سنتواصل معك قريباً.`);
+                }
 
                 const adminOrderMessage = `✨ طلب جديد من متجر بخور الشيخ ✨\n\n` +
                     `👤 الاسم: ${name}\n` +
@@ -795,77 +796,6 @@
                     `الطلبات:\n${cartDetailsSummary}\n` +
                     `📦 إجمالي القطع المطلوبة: ${totalItems}\n` +
                     `💰 الإجمالي الكلي: ${total} جنيه مصري`;
-
-                const customerConfirmationMessage = `أهلاً بك في بخور الشيخ 🌿\n\n` +
-                    `تم استلام طلبك بنجاح!\n` +
-                    (savedOrder?.id ? `رقم الطلب: ${savedOrder.id}\n\n` : '\n') +
-                    `نعمل حالياً على مراجعة طلبك وتجهيزه، وسنتواصل معك قريباً لتأكيد التفاصيل.\n\n` +
-                    `شكراً لثقتك بنا ❤️\nبخور الشيخ`;
-
-                const makeOrderPayload = {
-                    event: 'order.created',
-                    order_id: savedOrder?.id ?? null,
-                    idempotency_key: savedOrder?.id ? `order.created:${savedOrder.id}` : null,
-                    customer_name: name,
-                    customer_phone: customerWhatsAppNumber,
-                    customer_phone_input: phone,
-                    customer_address: address,
-                    products: webhookProducts,
-                    items: webhookProducts,
-                    total: total,
-                    total_price: total,
-                    notifications: {
-                        admin: {
-                            whatsapp_number: adminWhatsAppNumber,
-                            message: adminOrderMessage
-                        },
-                        customer: {
-                            whatsapp_number: customerWhatsAppNumber,
-                            message: customerConfirmationMessage
-                        }
-                    }
-                };
-
-                const triggerMakeWebhook = async (payload) => {
-                    const controller = new AbortController();
-                    const webhookTimeout = setTimeout(() => controller.abort(), 15000);
-
-                    try {
-                        console.log('Sending order to Make.com webhook:', {
-                            products: payload.products.length,
-                            total: payload.total_price
-                        });
-                        const webhookResponse = await fetch('https://hook.eu1.make.com/1k4l3mxlwyfldhuid3qd7w3l1utx3ocn', {
-                            method: 'POST',
-                            // JSON content type lets Make parse the webhook as structured data.
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload),
-                            signal: controller.signal,
-                            keepalive: true
-                        });
-
-                        if (webhookResponse.ok) {
-                            console.log('Make.com webhook succeeded:', {
-                                status: webhookResponse.status,
-                                products: payload.products.length,
-                                total: payload.total_price
-                            });
-                        } else {
-                            console.error('Make.com webhook failed:', {
-                                status: webhookResponse.status,
-                                statusText: webhookResponse.statusText
-                            });
-                        }
-                    } catch (webhookError) {
-                        console.error('Make.com webhook request failed after the Supabase order was saved:', webhookError);
-                    } finally {
-                        clearTimeout(webhookTimeout);
-                    }
-                };
-
-                // Do not await the external webhook: a slow Make response must
-                // not keep the checkout button in its loading state.
-                void triggerMakeWebhook(makeOrderPayload);
 
                 // خصم المخزون من قاعدة البيانات
                 const stockUpdateTasks = orderedItemsList.map(async (item) => {
@@ -889,7 +819,7 @@
                     }
                 });
 
-                const adminMessage = makeOrderPayload.notifications.admin.message;
+                const adminMessage = adminOrderMessage;
                 const whatsappUrl = `https://wa.me/${adminWhatsAppNumber}?text=${encodeURIComponent(adminMessage)}`;
                 if (whatsappWindow) {
                     whatsappWindow.location.href = whatsappUrl;
@@ -932,22 +862,33 @@
             document.getElementById('imageModal').style.display = 'none';
         }
 
-        function adminLogin() {
-            const p = document.getElementById('adminPass').value;
-            if(p === '1234') {
-                document.getElementById('adminLoginForm').style.display = 'none';
-                document.getElementById('adminControls').style.display = 'block';
-                fetchUniqueVisitorsCount();
-                fetchShareStats();
-                renderAdminLists();
-            } else { 
-                alert('كلمة المرور غير صحيحة!'); 
+        async function adminLogin() {
+            const email = document.getElementById('adminEmail').value.trim();
+            const password = document.getElementById('adminPass').value;
+            if (!email || !password) {
+                alert('برجاء إدخال البريد الإلكتروني وكلمة المرور.');
+                return;
             }
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error || data?.user?.app_metadata?.role !== 'admin') {
+                if (!error) await supabaseClient.auth.signOut();
+                alert('تعذر تسجيل الدخول بحساب مسؤول معتمد.');
+                return;
+            }
+
+            document.getElementById('adminLoginForm').style.display = 'none';
+            document.getElementById('adminControls').style.display = 'block';
+            fetchUniqueVisitorsCount();
+            fetchShareStats();
+            renderAdminLists();
         }
 
-        function adminLogout() {
+        async function adminLogout() {
+            await supabaseClient.auth.signOut();
             document.getElementById('adminLoginForm').style.display = 'block';
             document.getElementById('adminControls').style.display = 'none';
+            document.getElementById('adminEmail').value = '';
             document.getElementById('adminPass').value = '';
             resetProductForm();
             closeAdminModal();
