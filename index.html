@@ -533,6 +533,7 @@
         <p>جميع الحقوق محفوظة لمتجر © بخور الشيخ 2026 | تطوير آمن ومستقل 100%</p>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- JavaScript Script Code -->
     <script>
         // المنتجات الأساسية الافتراضية للبدء
@@ -563,7 +564,11 @@
             }
         ];
 
-        let products = JSON.parse(localStorage.getItem('elsheikh_products')) || defaultProducts;
+        let products = defaultProducts;
+        const cloudUrl = 'https://zhppvfabbjffmjgsiaza.supabase.co';
+        const cloudKey = 'sb_publishable_k6SigiKq0iAPzvxPwyW8LQ_4bdqEVEq';
+        const cloud = window.supabase ? window.supabase.createClient(cloudUrl, cloudKey) : null;
+        let cloudReady = false;
         let selectedQuantities = {};
         let selectedScents = {};
 
@@ -709,7 +714,7 @@
             closeAdminModal();
         }
 
-        function addNewProductFromAdmin() {
+        async function addNewProductFromAdmin() {
             const name = document.getElementById('newProdName').value;
             const price = parseFloat(document.getElementById('newProdPrice').value);
             const img = document.getElementById('newProdImg').value || "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
@@ -732,14 +737,38 @@
             };
 
             products.push(newProd);
-            localStorage.setItem('elsheikh_products', JSON.stringify(products));
+            if (cloud && cloudReady) {
+                const { error } = await cloud.from('products').insert({
+                    id: newProd.id, title: newProd.title, price: newProd.price, badge: 'جديد',
+                    variants: scents.map(name => ({ name, img, desc: newProd.desc }))
+                });
+                if (error) { alert('تعذر حفظ المنتج سحابياً: ' + error.message); return; }
+            } else {
+                localStorage.setItem('elsheikh_products', JSON.stringify(products));
+            }
             renderProducts();
             alert('تمت إضافة المنتج بنجاح!');
             closeAdminModal();
         }
 
+        // تحميل المنتجات من Supabase مع إبقاء الافتراضية عند تعذر الاتصال.
+        async function loadCloudProducts() {
+            if (!cloud) return;
+            const { data, error } = await cloud.from('products').select('id,title,price,variants').order('id', { ascending: true });
+            if (error) { console.error('Supabase products load failed:', error); return; }
+            if (Array.isArray(data) && data.length) {
+                products = data.map(row => {
+                    const variants = Array.isArray(row.variants) ? row.variants : [];
+                    const first = variants[0] || {};
+                    return { id: Number(row.id), title: row.title || 'منتج', price: Number(row.price) || 0, desc: first.desc || 'منتج فاخر من بخور الشيخ', img: first.img || '', scents: variants.length ? variants.map(v => v.name || 'النوع الأساسي') : ['النوع الأساسي'] };
+                });
+            }
+            cloudReady = true; renderProducts();
+        }
+
         // تشغيل البداية
         renderProducts();
+        loadCloudProducts();
     </script>
 </body>
 </html>
