@@ -639,8 +639,46 @@
 
         // إرسال الطلب عبر الواتساب للرقم المطلوب
         function sendOrderToWhatsApp() {
-            alert('تم نقل الطلبات إلى المتجر الرئيسي الآمن. سيتم تحويلك الآن.');
-            window.location.assign('../index.html#orderBox');
+            const name = document.getElementById('custName').value.trim();
+            const phone = document.getElementById('custPhone').value.trim();
+            const address = document.getElementById('custAddress').value.trim();
+
+            if (!name || !phone || !address) {
+                alert('برجاء كتابة الاسم، رقم الهاتف، والعنوان التفصيلي لإتمام الطلب.');
+                return;
+            }
+
+            let orderItemsText = "";
+            let grandTotal = 0;
+            let hasItems = false;
+
+            products.forEach(prod => {
+                const qty = selectedQuantities[prod.id] || 0;
+                if (qty > 0) {
+                    hasItems = true;
+                    const itemTotal = qty * prod.price;
+                    grandTotal += itemTotal;
+                    orderItemsText += `• ${prod.title}\n  - الرائحة: ${selectedScents[prod.id]}\n  - الكمية: ${qty} عبوة | السعر: ${itemTotal} ج.م\n\n`;
+                }
+            });
+
+            if (!hasItems) {
+                alert('برجاء تحديد كمية المنتجات المطلوبة أولاً (+).');
+                return;
+            }
+
+            const message = `✨ *طلب جديد من موقع بخور الشيخ* ✨\n\n` +
+                `👤 *بيانات العميل:*\n` +
+                `• الاسم: ${name}\n` +
+                `• الهاتف: ${phone}\n` +
+                `• العنوان: ${address}\n\n` +
+                `📦 *تفاصيل المنتجات المطلوبة:*\n${orderItemsText}` +
+                `💰 *الإجمالي النهائي:* ${grandTotal} جنيه مصري\n\n` +
+                `يرجى تأكيد الطلب وتجهيز الشحن.`;
+
+            const targetPhone = "201278771472"; // رقم الواتساب المعتمد
+            const encodedUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
+            window.open(encodedUrl, '_blank');
         }
 
         // Admin Modal Controls
@@ -653,7 +691,16 @@
         }
 
         function adminLogin() {
-            alert('لوحة الإدارة غير مفعلة في هذه النسخة القديمة. استخدم صفحة المتجر الرئيسية لتسجيل الدخول الآمن.');
+            const user = document.getElementById('adminUser').value;
+            const pass = document.getElementById('adminPass').value;
+
+            // يمكنك تغيير اسم المستخدم وكلمة المرور من هنا
+            if (user === 'admin' && pass === '123456') {
+                document.getElementById('adminLoginForm').style.display = 'none';
+                document.getElementById('adminDashboardControls').style.display = 'block';
+            } else {
+                alert('اسم المستخدم أو كلمة المرور غير صحيحة!');
+            }
         }
 
         function adminLogout() {

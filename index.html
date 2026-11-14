@@ -129,7 +129,6 @@
             display: flex; align-items: center; justify-content: center; gap: 10px;
         }
         .submit-btn:disabled { background: #555; cursor: not-allowed; opacity: 0.7; }
-        .availability-note { color: #d8c9a5; font-size: 13px; line-height: 1.7; margin: 10px 0; }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -217,9 +216,8 @@
                 <span>إجمالي الطلب:</span>
                 <strong style="color:var(--primary-gold); font-size:20px;" id="grandTotalPrice">0 ج.م</strong>
             </div>
-            <p class="availability-note">المخزون غير مسجل حالياً؛ سنراجع توفر المنتجات ونتواصل معك لتأكيد الطلب.</p>
             <button class="submit-btn" id="submitOrderBtn" onclick="sendOrderToWhatsApp()">
-                <i class="fa-solid fa-check" style="font-size:20px;"></i> تأكيد الطلب
+                <i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> تأكيد الطلب وإرسال إشعار واتساب
             </button>
         </div>
     </div>
@@ -231,13 +229,9 @@
             
             <div id="adminLoginForm">
                 <h3 style="color:var(--primary-gold); margin-bottom:15px; text-align:center;">دخول لوحة تحكم المالك</h3>
-                <div class="form-group" style="margin-bottom:12px;">
-                    <label>البريد الإلكتروني للمسؤول</label>
-                    <input type="email" id="adminEmail" autocomplete="username" placeholder="البريد الإلكتروني">
-                </div>
                 <div class="form-group" style="margin-bottom:20px;">
                     <label>كلمة المرور</label>
-                    <input type="password" id="adminPass" autocomplete="current-password" placeholder="أدخل كلمة المرور">
+                    <input type="password" id="adminPass" placeholder="أدخل كلمة المرور">
                 </div>
                 <button class="submit-btn" style="background:var(--primary-gold); color:#000;" onclick="adminLogin()">دخول</button>
             </div>
@@ -313,8 +307,32 @@
         
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        const defaultProducts = [
+            { 
+                id: 1, 
+                title: "انسام 5 ساعات", 
+                price: 80, 
+                stock_quantity: 50,
+                badge: "الأكثر مبيعاً", 
+                variants: [
+                    { name: "روح المسك", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "بخور أنسام روح المسك، تجربة عطرية تجمع بين الانتعاش والنعومة، مع لمحات زهرية منعشة." },
+                    { name: "أرابيسك كلاسيك", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "خلطة شرقية أصلية تدوم طويلاً بثبات وعطر فواح." }
+                ]
+            },
+            { 
+                id: 2, 
+                title: "تيجان", 
+                price: 65, 
+                stock_quantity: 30,
+                badge: "مميز", 
+                variants: [
+                    { name: "اضواء باريس", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "عطر فريد يجعلك تشعر وكأنك تتجول في شوارع باريس العامرة بالأضواء والروائح الخلابة." },
+                    { name: "نفائس العود", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "عبير العود الملكي الأصيل للمجالس الفاخرة." }
+                ]
+            }
+        ];
+
         let products = [];
-        let productsLoadMessage = 'جاري تحميل المنتجات...';
         let reviews = [];
         let quantities = {};
         let selectedVariantIndexes = {};
@@ -356,9 +374,8 @@
         }
 
         async function fetchShareStats() {
-            if (!await hasAdminSession()) return;
             try {
-                let { count, error } = await supabaseClient.from('shares').select('id', { count: 'exact', head: true });
+                let { count, error } = await supabaseClient.from('shares').select('*', { count: 'exact', head: true });
                 if (!error && count !== null) {
                     document.getElementById('adminShareCount').innerText = count;
                 }
@@ -374,27 +391,19 @@
                 const userIp = data.ip;
 
                 if (userIp) {
-                    // Visitors may add an event but must not read other visitors' IPs.
-                    await supabaseClient.from('analytics').insert([{ ip: userIp }]);
+                    let { data: existingIp } = await supabaseClient.from('analytics').select('ip').eq('ip', userIp);
+                    if (!existingIp || existingIp.length === 0) {
+                        await supabaseClient.from('analytics').insert([{ ip: userIp }]);
+                    }
                 }
             } catch(e) {
                 console.log("Analytics IP tracking error", e);
             }
         }
 
-        async function hasAdminSession() {
-            try {
-                const { data } = await supabaseClient.auth.getSession();
-                return data?.session?.user?.app_metadata?.role === 'admin';
-            } catch(e) {
-                return false;
-            }
-        }
-
         async function fetchUniqueVisitorsCount() {
-            if (!await hasAdminSession()) return;
             try {
-                let { count, error } = await supabaseClient.from('analytics').select('id', { count: 'exact', head: true });
+                let { count, error } = await supabaseClient.from('analytics').select('*', { count: 'exact', head: true });
                 if (!error && count !== null) {
                     document.getElementById('adminVisitorCount').innerText = count;
                 }
@@ -405,21 +414,14 @@
 
         async function loadDataFromCloud() {
             try {
-                // The live products schema has no is_published column. Read only
-                // fields/rows exposed by the current RLS policy until a reviewed
-                // visibility migration is approved and deployed.
-                const { data: prodData, error: prodErr } = await supabaseClient.from('products')
-                    .select('id,title,price,badge,variants,stock_quantity');
-                if (prodErr) {
-                    console.error('Products could not be loaded from Supabase.');
-                    products = [];
-                    productsLoadMessage = 'تعذر تحميل المنتجات الآن. يرجى إعادة المحاولة لاحقًا.';
-                } else if (Array.isArray(prodData) && prodData.length > 0) {
+                let { data: prodData, error: prodErr } = await supabaseClient.from('products').select('*');
+                if (!prodErr && prodData && prodData.length > 0) {
                     products = prodData;
-                    productsLoadMessage = '';
                 } else {
-                    products = [];
-                    productsLoadMessage = 'لا توجد منتجات متاحة حاليًا.';
+                    for (let p of defaultProducts) {
+                        await supabaseClient.from('products').upsert(p);
+                    }
+                    products = [...defaultProducts];
                 }
 
                 let { data: revData, error: revErr } = await supabaseClient.from('reviews').select('*');
@@ -427,9 +429,8 @@
                     reviews = revData;
                 }
             } catch(e) {
-                console.error('Products could not be loaded from Supabase.');
-                products = [];
-                productsLoadMessage = 'تعذر تحميل المنتجات الآن. يرجى إعادة المحاولة لاحقًا.';
+                console.log("Error loading cloud data", e);
+                products = [...defaultProducts];
             }
             renderProducts();
             renderReviews();
@@ -438,15 +439,6 @@
         function renderProducts() {
             const grid = document.getElementById('productsGrid');
             grid.innerHTML = '';
-            if (!products.length) {
-                const message = document.createElement('p');
-                message.className = 'loading-text';
-                message.setAttribute('role', 'status');
-                message.textContent = productsLoadMessage || 'لا توجد منتجات متاحة حاليًا.';
-                grid.appendChild(message);
-                calcTotal();
-                return;
-            }
             products.forEach(p => {
                 if(!quantities[p.id]) quantities[p.id] = 0;
                 if(selectedVariantIndexes[p.id] === undefined) selectedVariantIndexes[p.id] = 0;
@@ -683,7 +675,8 @@
             document.getElementById('grandTotalPrice').innerText = total + ' ج.م';
         }
 
-        // Normalize Egyptian mobile numbers before storing them in orders.
+        // Normalize only Egyptian mobile numbers. Keep this value separate from
+        // the customer's original input, which is retained for order records.
         function normalizeEgyptianMobile(value) {
             let digits = String(value || '').replace(/[\s\-()]/g, '');
             if (digits.startsWith('+')) digits = digits.slice(1);
@@ -698,7 +691,6 @@
         }
 
         async function sendOrderToWhatsApp() {
-            if (window.bokhoorOrderSubmitting) return;
             const name = document.getElementById('custName').value.trim();
             const phone = document.getElementById('custPhone').value.trim();
             const address = document.getElementById('custAddress').value.trim();
@@ -714,20 +706,34 @@
                 return;
             }
 
-            let hasItems = false;
+            let total = 0, totalItems = 0, hasItems = false;
+            let cartDetailsSummary = "";
             let orderedItemsList = [];
+            let webhookProducts = [];
 
             products.forEach(p => {
                 let q = quantities[p.id] || 0;
                 if(q > 0) {
                     hasItems = true;
+                    let itemTotal = q * p.price;
+                    total += itemTotal;
+                    totalItems += q;
                     
                     let vName = p.variants && p.variants[selectedVariantIndexes[p.id]] ? p.variants[selectedVariantIndexes[p.id]].name : 'النوع الأساسي';
+                    cartDetailsSummary += `- ${p.title} (${vName}) الكمية: ${q} | السعر: ${itemTotal} ج.م\n`;
                     
                     orderedItemsList.push({
                         productId: p.id,
                         orderedQty: q,
-                        variant: vName
+                        currentStock: p.stock_quantity !== undefined ? p.stock_quantity : 50
+                    });
+                    webhookProducts.push({
+                        productId: p.id,
+                        name: p.title,
+                        variant: vName,
+                        quantity: q,
+                        unitPrice: p.price,
+                        subtotal: itemTotal
                     });
                 }
             });
@@ -737,62 +743,173 @@
                 return; 
             }
 
+            // Send the order to the store admin; keep the customer's normalized
+            // phone in the Make payload for customer notifications.
+            const adminWhatsAppNumber = '201278771472';
+            const customerWhatsAppNumber = normalizedCustomerPhone;
+
             const submitBtn = document.getElementById('submitOrderBtn');
-            window.bokhoorOrderSubmitting = true;
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري حفظ الطلب...';
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري إرسال وحفظ الطلب...';
             let orderSaved = false;
+            // Open synchronously from the click so the browser allows the later
+            // WhatsApp redirect after the asynchronous Supabase insert.
+            const whatsappWindow = window.open('', '_blank');
+
             try {
-                const requestStorageKey = 'bokhoor_pending_order_request_id';
-                let clientRequestId = sessionStorage.getItem(requestStorageKey);
-                if (!clientRequestId) {
-                    clientRequestId = crypto.randomUUID();
-                    sessionStorage.setItem(requestStorageKey, clientRequestId);
-                }
+                // حفظ الطلب في Supabase أولاً
+                const { data: savedOrder, error } = await supabaseClient
+                    .from('orders')
+                    .insert([
+                        { 
+                            customer_name: name, 
+                            customer_phone: phone, 
+                            customer_address: address, 
+                            total_amount: total,
+                            order_details: cartDetailsSummary,
+                            total_items_count: totalItems
+                        }
+                    ])
+                    .select('id')
+                    .single();
 
-                const { data: orderResponse, error } = await supabaseClient.functions.invoke('create-order', {
-                    body: {
-                        client_request_id: clientRequestId,
-                        customer_name: name,
-                        customer_phone: normalizedCustomerPhone,
-                        customer_address: address,
-                        items: orderedItemsList.map(({ productId, orderedQty, variant }) => ({
-                            product_id: productId,
-                            quantity: orderedQty,
-                            variant
-                        }))
-                    }
-                });
-
-                if (error || !orderResponse?.order_id) {
-                    console.error('Order service request failed.');
-                    alert('تعذر تأكيد حفظ الطلب الآن. برجاء المحاولة مرة أخرى بعد لحظات.');
+                if (error) {
+                    console.error('Supabase order insert failed:', error);
+                    if (whatsappWindow) whatsappWindow.close();
+                    alert('حدث خطأ أثناء حفظ الطلب سحابياً، برجاء المحاولة مرة أخرى.');
                     return;
                 }
 
-                const savedOrder = { id: orderResponse.order_id };
-                sessionStorage.removeItem(requestStorageKey);
                 orderSaved = true;
-                submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> تم حفظ الطلب';
-                quantities = {};
-                renderProducts();
-                calcTotal();
-                alert(`تم حفظ طلبك رقم ${savedOrder.id} بنجاح. سنراجع توفر المنتجات ونتواصل معك لتأكيد التفاصيل.`);
+                submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> تم حفظ الطلب وإرسال الإشعارات';
+
+                console.log('Supabase order insert succeeded:', {
+                    total: total,
+                    item_count: totalItems
+                });
+
+                const adminOrderMessage = `✨ طلب جديد من متجر بخور الشيخ ✨\n\n` +
+                    `👤 الاسم: ${name}\n` +
+                    `📱 الهاتف: ${phone}\n` +
+                    `📍 العنوان: ${address}\n\n` +
+                    `الطلبات:\n${cartDetailsSummary}\n` +
+                    `📦 إجمالي القطع المطلوبة: ${totalItems}\n` +
+                    `💰 الإجمالي الكلي: ${total} جنيه مصري`;
+
+                const customerConfirmationMessage = `أهلاً بك في بخور الشيخ 🌿\n\n` +
+                    `تم استلام طلبك بنجاح!\n` +
+                    (savedOrder?.id ? `رقم الطلب: ${savedOrder.id}\n\n` : '\n') +
+                    `نعمل حالياً على مراجعة طلبك وتجهيزه، وسنتواصل معك قريباً لتأكيد التفاصيل.\n\n` +
+                    `شكراً لثقتك بنا ❤️\nبخور الشيخ`;
+
+                const makeOrderPayload = {
+                    event: 'order.created',
+                    order_id: savedOrder?.id ?? null,
+                    idempotency_key: savedOrder?.id ? `order.created:${savedOrder.id}` : null,
+                    customer_name: name,
+                    customer_phone: customerWhatsAppNumber,
+                    customer_phone_input: phone,
+                    customer_address: address,
+                    products: webhookProducts,
+                    items: webhookProducts,
+                    total: total,
+                    total_price: total,
+                    notifications: {
+                        admin: {
+                            whatsapp_number: adminWhatsAppNumber,
+                            message: adminOrderMessage
+                        },
+                        customer: {
+                            whatsapp_number: customerWhatsAppNumber,
+                            message: customerConfirmationMessage
+                        }
+                    }
+                };
+
+                const triggerMakeWebhook = async (payload) => {
+                    const controller = new AbortController();
+                    const webhookTimeout = setTimeout(() => controller.abort(), 15000);
+
+                    try {
+                        console.log('Sending order to Make.com webhook:', {
+                            products: payload.products.length,
+                            total: payload.total_price
+                        });
+                        const webhookResponse = await fetch('https://hook.eu1.make.com/1k4l3mxlwyfldhuid3qd7w3l1utx3ocn', {
+                            method: 'POST',
+                            // JSON content type lets Make parse the webhook as structured data.
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload),
+                            signal: controller.signal,
+                            keepalive: true
+                        });
+
+                        if (webhookResponse.ok) {
+                            console.log('Make.com webhook succeeded:', {
+                                status: webhookResponse.status,
+                                products: payload.products.length,
+                                total: payload.total_price
+                            });
+                        } else {
+                            console.error('Make.com webhook failed:', {
+                                status: webhookResponse.status,
+                                statusText: webhookResponse.statusText
+                            });
+                        }
+                    } catch (webhookError) {
+                        console.error('Make.com webhook request failed after the Supabase order was saved:', webhookError);
+                    } finally {
+                        clearTimeout(webhookTimeout);
+                    }
+                };
+
+                // Do not await the external webhook: a slow Make response must
+                // not keep the checkout button in its loading state.
+                void triggerMakeWebhook(makeOrderPayload);
+
+                // خصم المخزون من قاعدة البيانات
+                const stockUpdateTasks = orderedItemsList.map(async (item) => {
+                    let updatedStock = Math.max(0, item.currentStock - item.orderedQty);
+                    let pObj = products.find(p => p.id == item.productId);
+                    if(pObj) pObj.stock_quantity = updatedStock;
+
+                    const { error: stockError } = await supabaseClient
+                        .from('products')
+                        .update({ stock_quantity: updatedStock })
+                        .eq('id', item.productId);
+                    if (stockError) throw stockError;
+                });
+
+                void Promise.allSettled(stockUpdateTasks).then(results => {
+                    const failedUpdates = results.filter(result => result.status === 'rejected');
+                    if (failedUpdates.length) {
+                        console.error('One or more Supabase stock updates failed:', failedUpdates);
+                    } else {
+                        console.log('Supabase stock updates succeeded:', results.length);
+                    }
+                });
+
+                const adminMessage = makeOrderPayload.notifications.admin.message;
+                const whatsappUrl = `https://wa.me/${adminWhatsAppNumber}?text=${encodeURIComponent(adminMessage)}`;
+                if (whatsappWindow) {
+                    whatsappWindow.location.href = whatsappUrl;
+                } else {
+                    console.warn('WhatsApp popup was blocked; opening the admin order draft in this tab.');
+                    window.location.assign(whatsappUrl);
+                }
 
             } catch (err) {
+                if (whatsappWindow && !orderSaved) whatsappWindow.close();
                 console.error(orderSaved ? 'Order saved, but post-save processing failed:' : 'Order submission failed:', err);
                 if (!orderSaved) {
                     alert('حدث خطأ أثناء إرسال الطلب، برجاء المحاولة مرة أخرى.');
                 }
             } finally {
                 if (!orderSaved) {
-                    window.bokhoorOrderSubmitting = false;
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fa-solid fa-check" style="font-size:20px;"></i> تأكيد الطلب';
+                    submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> تأكيد الطلب وإرسال إشعار واتساب';
                 } else {
-                    window.bokhoorOrderSubmitting = false;
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fa-solid fa-check" style="font-size:20px;"></i> تأكيد الطلب';
+                    submitBtn.disabled = true;
                 }
             }
         }
@@ -815,34 +932,22 @@
             document.getElementById('imageModal').style.display = 'none';
         }
 
-        async function adminLogin() {
-            const email = document.getElementById('adminEmail').value.trim();
-            const password = document.getElementById('adminPass').value;
-            if (!email || !password) {
-                alert('برجاء إدخال البريد الإلكتروني وكلمة المرور.');
-                return;
+        function adminLogin() {
+            const p = document.getElementById('adminPass').value;
+            if(p === '1234') {
+                document.getElementById('adminLoginForm').style.display = 'none';
+                document.getElementById('adminControls').style.display = 'block';
+                fetchUniqueVisitorsCount();
+                fetchShareStats();
+                renderAdminLists();
+            } else { 
+                alert('كلمة المرور غير صحيحة!'); 
             }
-
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error || data?.user?.app_metadata?.role !== 'admin') {
-                if (!error) await supabaseClient.auth.signOut();
-                alert('تعذر تسجيل الدخول بحساب مسؤول معتمد.');
-                return;
-            }
-
-            document.getElementById('adminLoginForm').style.display = 'none';
-            document.getElementById('adminControls').style.display = 'block';
-            await loadDataFromCloud();
-            fetchUniqueVisitorsCount();
-            fetchShareStats();
-            renderAdminLists();
         }
 
-        async function adminLogout() {
-            await supabaseClient.auth.signOut();
+        function adminLogout() {
             document.getElementById('adminLoginForm').style.display = 'block';
             document.getElementById('adminControls').style.display = 'none';
-            document.getElementById('adminEmail').value = '';
             document.getElementById('adminPass').value = '';
             resetProductForm();
             closeAdminModal();
