@@ -337,7 +337,7 @@
 
         let products = [];
         let reviews = [];
-        let quantities = {};
+        let variantQuantities = {};
         let selectedVariantIndexes = {};
         let editingProductId = null;
 
@@ -443,7 +443,7 @@
             const grid = document.getElementById('productsGrid');
             grid.innerHTML = '';
             products.forEach(p => {
-                if(!quantities[p.id]) quantities[p.id] = 0;
+                if(!variantQuantities[p.id]) variantQuantities[p.id] = {};
                 if(selectedVariantIndexes[p.id] === undefined) selectedVariantIndexes[p.id] = 0;
                 
                 let variantsList = p.variants && p.variants.length > 0 ? p.variants : [{ name: "النوع الأساسي", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "بخور فاخر." }];
@@ -470,7 +470,7 @@
 
                             <div class="qty-row">
                                 <button class="qty-btn" onclick="updateQty(${p.id}, -1)">-</button>
-                                <span class="qty-val" id="qty-${p.id}">${quantities[p.id]}</span>
+                                <span class="qty-val" id="qty-${p.id}">${variantQuantities[p.id][selectedVariantIndexes[p.id]] || 0}</span>
                                 <button class="qty-btn" onclick="updateQty(${p.id}, 1)">+</button>
                             </div>
                         </div>
@@ -489,6 +489,10 @@
                 imgElement.src = selected.img;
                 imgElement.setAttribute('onclick', `openImageModal('${selected.img}')`);
                 document.getElementById(`desc-prod-${prodId}`).innerText = selected.desc;
+            }
+            const qtyElement = document.getElementById(`qty-${prodId}`);
+            if (qtyElement) {
+                qtyElement.innerText = (variantQuantities[prodId] && variantQuantities[prodId][selectedVariantIndexes[prodId]]) || 0;
             }
         }
 
@@ -667,14 +671,24 @@
         }
 
         function updateQty(id, delta) {
-            quantities[id] = Math.max(0, (quantities[id] || 0) + delta);
-            document.getElementById(`qty-${id}`).innerText = quantities[id];
+            if (!variantQuantities[id]) variantQuantities[id] = {};
+            const variantIdx = selectedVariantIndexes[id] || 0;
+            variantQuantities[id][variantIdx] = Math.max(0, (variantQuantities[id][variantIdx] || 0) + delta);
+            document.getElementById(`qty-${id}`).innerText = variantQuantities[id][variantIdx];
             calcTotal();
         }
 
         function calcTotal() {
             let total = 0;
-            products.forEach(p => { total += (quantities[p.id] || 0) * p.price; });
+            products.forEach(p => {
+                const productQuantities = variantQuantities[p.id] || {};
+                const variantCount = p.variants && p.variants.length > 0 ? p.variants.length : 1;
+                let productTotalQuantity = 0;
+                for (let variantIdx = 0; variantIdx < variantCount; variantIdx++) {
+                    productTotalQuantity += Number(productQuantities[variantIdx]) || 0;
+                }
+                total += productTotalQuantity * p.price;
+            });
             document.getElementById('grandTotalPrice').innerText = total + ' ج.م';
         }
 
@@ -694,21 +708,24 @@
             let webhookItems = [];
 
             products.forEach(p => {
-                let q = quantities[p.id] || 0;
-                if(q > 0) {
+                const variantsList = p.variants && p.variants.length > 0
+                    ? p.variants
+                    : [{ name: 'النوع الأساسي' }];
+                const productQuantities = variantQuantities[p.id] || {};
+                let productOrderedQty = 0;
+
+                variantsList.forEach((variant, variantIdx) => {
+                    const q = Number(productQuantities[variantIdx]) || 0;
+                    if (q <= 0) return;
+
                     hasItems = true;
-                    let itemTotal = q * p.price;
+                    const itemTotal = q * p.price;
+                    const vName = variant.name || 'النوع الأساسي';
                     total += itemTotal;
                     totalItems += q;
-                    
-                    let vName = p.variants && p.variants[selectedVariantIndexes[p.id]] ? p.variants[selectedVariantIndexes[p.id]].name : 'النوع الأساسي';
+                    productOrderedQty += q;
+
                     cartDetailsSummary += `- ${p.title} (${vName}) الكمية: ${q} | السعر: ${itemTotal} ج.م\n`;
-                    
-                    orderedItemsList.push({
-                        productId: p.id,
-                        orderedQty: q,
-                        currentStock: p.stock_quantity !== undefined ? p.stock_quantity : 50
-                    });
                     webhookItems.push({
                         product_id: p.id,
                         name: p.title,
@@ -716,6 +733,15 @@
                         quantity: q,
                         unit_price: p.price,
                         subtotal: itemTotal
+                    });
+                });
+
+                // Deduct stock once per base product using the sum of all ordered variants.
+                if (productOrderedQty > 0) {
+                    orderedItemsList.push({
+                        productId: p.id,
+                        orderedQty: productOrderedQty,
+                        currentStock: p.stock_quantity !== undefined ? p.stock_quantity : 50
                     });
                 }
             });
