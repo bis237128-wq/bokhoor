@@ -101,6 +101,26 @@
             border: 1px solid var(--primary-gold); border-radius: 8px; color: #fff;
             outline: none; cursor: pointer; font-weight: bold; font-size: 14px;
         }
+        .scent-dropdown.needs-variant-selection {
+            border: 2px solid var(--primary-gold);
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.18);
+            animation: variant-selection-pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes variant-selection-pulse {
+            0%, 100% { box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.16); }
+            50% { box-shadow: 0 0 0 5px rgba(212, 175, 55, 0.32); }
+        }
+        .variant-selection-hint {
+            color: var(--primary-gold); font-size: 12px; font-weight: 700;
+            margin-top: 7px; text-align: center;
+        }
+        .qty-btn:disabled {
+            opacity: 0.38; cursor: not-allowed; filter: grayscale(0.75);
+        }
+        .qty-btn:disabled:hover { background: #1a1610; }
+        @media (prefers-reduced-motion: reduce) {
+            .scent-dropdown.needs-variant-selection { animation: none; }
+        }
         .scent-desc {
             font-size: 12px; color: var(--text-muted); background: #080604;
             padding: 10px; border-radius: 6px; border-right: 3px solid var(--primary-gold);
@@ -444,11 +464,15 @@
             grid.innerHTML = '';
             products.forEach(p => {
                 if(!variantQuantities[p.id]) variantQuantities[p.id] = {};
-                if(selectedVariantIndexes[p.id] === undefined) selectedVariantIndexes[p.id] = 0;
-                
-                let variantsList = p.variants && p.variants.length > 0 ? p.variants : [{ name: "النوع الأساسي", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "بخور فاخر." }];
-                if(selectedVariantIndexes[p.id] >= variantsList.length) selectedVariantIndexes[p.id] = 0;
-                let currentVariant = variantsList[selectedVariantIndexes[p.id]];
+                const hasSelectableVariants = Array.isArray(p.variants) && p.variants.length > 0;
+                const variantsList = hasSelectableVariants
+                    ? p.variants
+                    : [{ name: "النوع الأساسي", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "بخور فاخر." }];
+                if (selectedVariantIndexes[p.id] === undefined) selectedVariantIndexes[p.id] = -1;
+                if (selectedVariantIndexes[p.id] < -1 || selectedVariantIndexes[p.id] >= variantsList.length) selectedVariantIndexes[p.id] = -1;
+                const hasSelectedVariant = hasSelectableVariants && selectedVariantIndexes[p.id] >= 0;
+                const defaultVariant = { name: "النوع الأساسي", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "اختر نوعاً من القائمة لمتابعة الطلب." };
+                const currentVariant = hasSelectedVariant ? variantsList[selectedVariantIndexes[p.id]] : defaultVariant;
 
                 grid.innerHTML += `
                     <div class="product-card">
@@ -462,16 +486,18 @@
                             
                             <div class="variant-box">
                                 <label class="variant-label">اختر النوع / النكهة:</label>
-                                <select class="scent-dropdown" onchange="changeProductVariant(${p.id}, this.value)">
-                                    ${variantsList.map((v, i) => `<option value="${i}" ${i == selectedVariantIndexes[p.id] ? 'selected' : ''}>${v.name}</option>`).join('')}
+                                <select id="variant-select-${p.id}" class="scent-dropdown ${hasSelectedVariant ? '' : 'needs-variant-selection'}" onchange="changeProductVariant(${p.id}, this.value)">
+                                    <option value="-1" ${hasSelectedVariant ? '' : 'selected'}>النوع الأساسي</option>
+                                    ${hasSelectableVariants ? variantsList.map((v, i) => `<option value="${i}" ${i == selectedVariantIndexes[p.id] ? 'selected' : ''}>${v.name}</option>`).join('') : ''}
                                 </select>
+                                <div class="variant-selection-hint" id="variant-hint-${p.id}" ${hasSelectedVariant ? 'hidden' : ''}>اختر نوعاً من القائمة لتفعيل الكمية</div>
                                 <div class="scent-desc" id="desc-prod-${p.id}">${currentVariant.desc}</div>
                             </div>
 
                             <div class="qty-row">
-                                <button class="qty-btn" onclick="updateQty(${p.id}, -1)">-</button>
-                                <span class="qty-val" id="qty-${p.id}">${variantQuantities[p.id][selectedVariantIndexes[p.id]] || 0}</span>
-                                <button class="qty-btn" onclick="updateQty(${p.id}, 1)">+</button>
+                                <button type="button" class="qty-btn" id="qty-minus-${p.id}" onclick="updateQty(${p.id}, -1)" ${hasSelectedVariant ? '' : 'disabled'}>-</button>
+                                <span class="qty-val" id="qty-${p.id}">${hasSelectedVariant ? (variantQuantities[p.id][selectedVariantIndexes[p.id]] || 0) : 0}</span>
+                                <button type="button" class="qty-btn" id="qty-plus-${p.id}" onclick="updateQty(${p.id}, 1)" ${hasSelectedVariant ? '' : 'disabled'}>+</button>
                             </div>
                         </div>
                     </div>
@@ -481,18 +507,35 @@
         }
 
         function changeProductVariant(prodId, variantIdx) {
-            selectedVariantIndexes[prodId] = parseInt(variantIdx);
-            let p = products.find(item => item.id == prodId);
-            if(p && p.variants) {
-                let selected = p.variants[variantIdx];
-                let imgElement = document.getElementById(`img-prod-${prodId}`);
+            const p = products.find(item => item.id == prodId);
+            const parsedVariantIdx = Number.parseInt(variantIdx, 10);
+            const hasSelectableVariants = !!(p && Array.isArray(p.variants) && p.variants.length > 0);
+            const hasSelectedVariant = hasSelectableVariants && Number.isInteger(parsedVariantIdx) && parsedVariantIdx >= 0 && parsedVariantIdx < p.variants.length;
+            selectedVariantIndexes[prodId] = hasSelectedVariant ? parsedVariantIdx : -1;
+
+            const defaultVariant = { img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "اختر نوعاً من القائمة لمتابعة الطلب." };
+            const selected = hasSelectedVariant ? p.variants[parsedVariantIdx] : defaultVariant;
+            const imgElement = document.getElementById(`img-prod-${prodId}`);
+            if (imgElement) {
                 imgElement.src = selected.img;
                 imgElement.setAttribute('onclick', `openImageModal('${selected.img}')`);
-                document.getElementById(`desc-prod-${prodId}`).innerText = selected.desc;
             }
+            const descElement = document.getElementById(`desc-prod-${prodId}`);
+            if (descElement) descElement.innerText = selected.desc;
+
+            const selectElement = document.getElementById(`variant-select-${prodId}`);
+            if (selectElement) selectElement.classList.toggle('needs-variant-selection', !hasSelectedVariant);
+            const hintElement = document.getElementById(`variant-hint-${prodId}`);
+            if (hintElement) hintElement.hidden = hasSelectedVariant;
+            const minusButton = document.getElementById(`qty-minus-${prodId}`);
+            const plusButton = document.getElementById(`qty-plus-${prodId}`);
+            if (minusButton) minusButton.disabled = !hasSelectedVariant;
+            if (plusButton) plusButton.disabled = !hasSelectedVariant;
             const qtyElement = document.getElementById(`qty-${prodId}`);
             if (qtyElement) {
-                qtyElement.innerText = (variantQuantities[prodId] && variantQuantities[prodId][selectedVariantIndexes[prodId]]) || 0;
+                qtyElement.innerText = hasSelectedVariant
+                    ? ((variantQuantities[prodId] && variantQuantities[prodId][parsedVariantIdx]) || 0)
+                    : 0;
             }
         }
 
@@ -671,8 +714,11 @@
         }
 
         function updateQty(id, delta) {
+            const product = products.find(item => item.id == id);
+            const variantIdx = selectedVariantIndexes[id];
+            if (!product || !Array.isArray(product.variants) || product.variants.length === 0 || variantIdx === undefined || variantIdx < 0 || variantIdx >= product.variants.length) return;
+
             if (!variantQuantities[id]) variantQuantities[id] = {};
-            const variantIdx = selectedVariantIndexes[id] || 0;
             variantQuantities[id][variantIdx] = Math.max(0, (variantQuantities[id][variantIdx] || 0) + delta);
             document.getElementById(`qty-${id}`).innerText = variantQuantities[id][variantIdx];
             calcTotal();
@@ -682,7 +728,7 @@
             let total = 0;
             products.forEach(p => {
                 const productQuantities = variantQuantities[p.id] || {};
-                const variantCount = p.variants && p.variants.length > 0 ? p.variants.length : 1;
+                const variantCount = Array.isArray(p.variants) ? p.variants.length : 0;
                 let productTotalQuantity = 0;
                 for (let variantIdx = 0; variantIdx < variantCount; variantIdx++) {
                     productTotalQuantity += Number(productQuantities[variantIdx]) || 0;
@@ -708,9 +754,7 @@
             let webhookItems = [];
 
             products.forEach(p => {
-                const variantsList = p.variants && p.variants.length > 0
-                    ? p.variants
-                    : [{ name: 'النوع الأساسي' }];
+                const variantsList = Array.isArray(p.variants) ? p.variants : [];
                 const productQuantities = variantQuantities[p.id] || {};
                 let productOrderedQty = 0;
 
