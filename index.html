@@ -304,6 +304,9 @@
     <script>
         const SUPABASE_URL = "https://zhppvfabbjffmjgsiaza.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_k6SigiKq0iAPzvxPwyW8LQ_4bdqEVEq";
+        const N8N_WEBHOOK_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+            ? 'http://localhost:5678/webhook/bakhoor-order'
+            : 'https://graphs-brand-globe-important.trycloudflare.com/webhook/bakhoor-order';
         
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -688,6 +691,7 @@
             let total = 0, totalItems = 0, hasItems = false;
             let cartDetailsSummary = "";
             let orderedItemsList = [];
+            let webhookItems = [];
 
             products.forEach(p => {
                 let q = quantities[p.id] || 0;
@@ -705,6 +709,14 @@
                         orderedQty: q,
                         currentStock: p.stock_quantity !== undefined ? p.stock_quantity : 50
                     });
+                    webhookItems.push({
+                        product_id: p.id,
+                        name: p.title,
+                        variant: vName,
+                        quantity: q,
+                        unit_price: p.price,
+                        subtotal: itemTotal
+                    });
                 }
             });
 
@@ -713,12 +725,15 @@
                 return; 
             }
 
+            const orderNumber = `BKH-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+            const orderDetails = `رقم الطلب: ${orderNumber}\n${cartDetailsSummary}`;
+
             const submitBtn = document.getElementById('submitOrderBtn');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري إرسال وحفظ الطلب...';
 
             try {
-                // حفظ الطلب في Supabase (وهو ما يقوم بدوره بإرسال الـ Webhook إلى Make تلقائياً)
+                // حفظ الطلب في Supabase أولاً، ثم إرسال إشعار n8n بشكل غير معطّل.
                 const { error } = await supabaseClient
                     .from('orders')
                     .insert([
@@ -727,7 +742,7 @@
                             customer_phone: phone, 
                             customer_address: address, 
                             total_amount: total,
-                            order_details: cartDetailsSummary,
+                            order_details: orderDetails,
                             total_items_count: totalItems
                         }
                     ]);
@@ -739,6 +754,62 @@
                     submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp" style="font-size:22px;"></i> تأكيد الطلب المباشر عبر الواتساب';
                     return;
                 }
+
+                console.log('Supabase order insert succeeded:', {
+                    order_number: orderNumber,
+                    customer_name: name,
+                    total: total,
+                    item_count: totalItems
+                });
+
+                const n8nOrderPayload = {
+                    event: 'order.created',
+                    order_number: orderNumber,
+                    customer_name: name,
+                    customer_phone: phone,
+                    customer_address: address,
+                    products: webhookItems,
+                    items: webhookItems,
+                    total: total,
+                    total_price: total,
+                    total_items_count: totalItems,
+                    order_details: orderDetails
+                };
+
+                const sendN8nWebhook = async () => {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 12000);
+                    try {
+                        console.log('Dispatching order to n8n:', {
+                            order_number: n8nOrderPayload.order_number,
+                            items: n8nOrderPayload.items.length,
+                            total: n8nOrderPayload.total_price
+                        });
+                        const response = await fetch(N8N_WEBHOOK_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                            body: JSON.stringify(n8nOrderPayload),
+                            signal: controller.signal,
+                            keepalive: true
+                        });
+
+                        if (response.type === 'opaque') {
+                            console.log('n8n order webhook POST dispatched; browser hides cross-origin response.');
+                        } else if (response.ok) {
+                            console.log('n8n order webhook succeeded:', response.status);
+                        } else {
+                            console.error('n8n order webhook returned an error:', response.status, response.statusText);
+                        }
+                    } catch (webhookError) {
+                        console.error('n8n webhook failed after the Supabase order was saved:', webhookError);
+                    } finally {
+                        clearTimeout(timeoutId);
+                    }
+                };
+
+                // Do not wait for n8n: an offline automation cannot block checkout.
+                void sendN8nWebhook();
 
                 // خصم المخزون من قاعدة البيانات
                 for (let item of orderedItemsList) {
@@ -753,6 +824,7 @@
                 }
 
                 let text = `✨ *طلب جديد من متجر بخور الشيخ* ✨\n\n` +
+                           `🔖 رقم الطلب: ${orderNumber}\n` +
                            `👤 الاسم: ${name}\n` +
                            `📱 الهاتف: ${phone}\n` +
                            `📍 العنوان: ${address}\n\n` +
