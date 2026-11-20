@@ -360,6 +360,36 @@
         let variantQuantities = {};
         let selectedVariantIndexes = {};
         let editingProductId = null;
+        const DEFAULT_PRODUCT_IMAGE = "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg";
+
+        function isPrimaryVariant(variant) {
+            const name = String(variant && variant.name || '').trim().replace(/\s+/g, ' ').replace(/[أإآ]/g, 'ا');
+            return name === 'النوع الاساسي';
+        }
+
+        function getProductVariantData(product) {
+            const allVariants = Array.isArray(product.variants)
+                ? product.variants.filter(variant => variant && typeof variant === 'object')
+                : [];
+            const primaryVariants = allVariants.filter(isPrimaryVariant);
+            const variants = allVariants.filter(variant => !isPrimaryVariant(variant));
+            const imageCandidates = [
+                product.image,
+                product.image_url,
+                product.main_image,
+                product.img,
+                ...primaryVariants.map(variant => variant.img || variant.image || variant.image_url),
+                ...allVariants.map(variant => variant.img || variant.image || variant.image_url)
+            ];
+            const baseImage = imageCandidates.find(image => typeof image === 'string' && image.trim())?.trim() || DEFAULT_PRODUCT_IMAGE;
+            const baseDescription = primaryVariants.find(variant => variant.desc)?.desc || 'اختر نوعاً من القائمة لمتابعة الطلب.';
+            return { variants, baseImage, baseDescription };
+        }
+
+        function getVariantImage(variant, baseImage) {
+            const image = variant && (variant.img || variant.image || variant.image_url);
+            return typeof image === 'string' && image.trim() ? image.trim() : baseImage;
+        }
 
         window.onload = function() {
             registerVisitorIP();
@@ -464,20 +494,20 @@
             grid.innerHTML = '';
             products.forEach(p => {
                 if(!variantQuantities[p.id]) variantQuantities[p.id] = {};
-                const hasSelectableVariants = Array.isArray(p.variants) && p.variants.length > 0;
-                const variantsList = hasSelectableVariants
-                    ? p.variants
-                    : [{ name: "النوع الأساسي", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "بخور فاخر." }];
+                const variantData = getProductVariantData(p);
+                const variantsList = variantData.variants;
+                const hasSelectableVariants = variantsList.length > 0;
                 if (selectedVariantIndexes[p.id] === undefined) selectedVariantIndexes[p.id] = -1;
                 if (selectedVariantIndexes[p.id] < -1 || selectedVariantIndexes[p.id] >= variantsList.length) selectedVariantIndexes[p.id] = -1;
                 const hasSelectedVariant = hasSelectableVariants && selectedVariantIndexes[p.id] >= 0;
-                const defaultVariant = { name: "النوع الأساسي", img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "اختر نوعاً من القائمة لمتابعة الطلب." };
+                const defaultVariant = { name: "النوع الأساسي", img: variantData.baseImage, desc: variantData.baseDescription };
                 const currentVariant = hasSelectedVariant ? variantsList[selectedVariantIndexes[p.id]] : defaultVariant;
+                const currentImage = getVariantImage(currentVariant, variantData.baseImage);
 
                 grid.innerHTML += `
                     <div class="product-card">
                         <div class="product-img-box">
-                            <img id="img-prod-${p.id}" src="${currentVariant.img}" referrerpolicy="no-referrer" onclick="openImageModal('${currentVariant.img}')">
+                            <img id="img-prod-${p.id}" src="${currentImage}" referrerpolicy="no-referrer" onclick="openImageModal('${currentImage}')">
                             ${p.badge ? `<span class="badge-tag">${p.badge}</span>` : ''}
                         </div>
                         <div class="product-content">
@@ -509,19 +539,19 @@
         function changeProductVariant(prodId, variantIdx) {
             const p = products.find(item => item.id == prodId);
             const parsedVariantIdx = Number.parseInt(variantIdx, 10);
-            const hasSelectableVariants = !!(p && Array.isArray(p.variants) && p.variants.length > 0);
-            const hasSelectedVariant = hasSelectableVariants && Number.isInteger(parsedVariantIdx) && parsedVariantIdx >= 0 && parsedVariantIdx < p.variants.length;
+            const variantData = p ? getProductVariantData(p) : { variants: [], baseImage: DEFAULT_PRODUCT_IMAGE, baseDescription: 'اختر نوعاً من القائمة لمتابعة الطلب.' };
+            const hasSelectedVariant = Number.isInteger(parsedVariantIdx) && parsedVariantIdx >= 0 && parsedVariantIdx < variantData.variants.length;
             selectedVariantIndexes[prodId] = hasSelectedVariant ? parsedVariantIdx : -1;
 
-            const defaultVariant = { img: "https://m.media-amazon.com/images/I/71G1M4L-NPL._AC_SL1500_.jpg", desc: "اختر نوعاً من القائمة لمتابعة الطلب." };
-            const selected = hasSelectedVariant ? p.variants[parsedVariantIdx] : defaultVariant;
+            const selected = hasSelectedVariant ? variantData.variants[parsedVariantIdx] : { img: variantData.baseImage, desc: variantData.baseDescription };
+            const selectedImage = getVariantImage(selected, variantData.baseImage);
             const imgElement = document.getElementById(`img-prod-${prodId}`);
             if (imgElement) {
-                imgElement.src = selected.img;
-                imgElement.setAttribute('onclick', `openImageModal('${selected.img}')`);
+                imgElement.src = selectedImage;
+                imgElement.setAttribute('onclick', `openImageModal('${selectedImage}')`);
             }
             const descElement = document.getElementById(`desc-prod-${prodId}`);
-            if (descElement) descElement.innerText = selected.desc;
+            if (descElement) descElement.innerText = selected.desc || variantData.baseDescription;
 
             const selectElement = document.getElementById(`variant-select-${prodId}`);
             if (selectElement) selectElement.classList.toggle('needs-variant-selection', !hasSelectedVariant);
@@ -716,7 +746,8 @@
         function updateQty(id, delta) {
             const product = products.find(item => item.id == id);
             const variantIdx = selectedVariantIndexes[id];
-            if (!product || !Array.isArray(product.variants) || product.variants.length === 0 || variantIdx === undefined || variantIdx < 0 || variantIdx >= product.variants.length) return;
+            const variantCount = product ? getProductVariantData(product).variants.length : 0;
+            if (!product || variantIdx === undefined || variantIdx < 0 || variantIdx >= variantCount) return;
 
             if (!variantQuantities[id]) variantQuantities[id] = {};
             variantQuantities[id][variantIdx] = Math.max(0, (variantQuantities[id][variantIdx] || 0) + delta);
@@ -728,7 +759,7 @@
             let total = 0;
             products.forEach(p => {
                 const productQuantities = variantQuantities[p.id] || {};
-                const variantCount = Array.isArray(p.variants) ? p.variants.length : 0;
+                const variantCount = getProductVariantData(p).variants.length;
                 let productTotalQuantity = 0;
                 for (let variantIdx = 0; variantIdx < variantCount; variantIdx++) {
                     productTotalQuantity += Number(productQuantities[variantIdx]) || 0;
@@ -754,7 +785,7 @@
             let webhookItems = [];
 
             products.forEach(p => {
-                const variantsList = Array.isArray(p.variants) ? p.variants : [];
+                const variantsList = getProductVariantData(p).variants;
                 const productQuantities = variantQuantities[p.id] || {};
                 let productOrderedQty = 0;
 
