@@ -4,9 +4,11 @@ This deployment runs n8n behind Caddy with automatic HTTPS and a persistent Post
 
 ## 1. Prepare a VPS and DNS
 
-1. Provision an always-on Linux VPS with at least 2 vCPU, 2 GB RAM, and persistent disk. A small paid VPS is more suitable than a free service that sleeps or stops.
-2. Register a domain or subdomain for n8n, for example `n8n.example.com`, and point its DNS A record to the VPS public IP. Keep the DNS record DNS-only while Caddy obtains its first certificate. Allow inbound TCP ports 80 and 443 (and UDP 443 for HTTP/3); restrict SSH to trusted addresses.
-3. Install Docker Engine and the Docker Compose plugin on the VPS.
+1. For a no-cost trial, Oracle Cloud Always Free A1 Flex is a possible fit: its published allowance is up to 2 OCPUs and 12 GB RAM in the home region. Use an ARM64 Ubuntu image and allocate at least 2 vCPU and 2 GB RAM; the pinned n8n image publishes both amd64 and arm64 variants. The 1 GB E2.1.Micro shape is below this deployment's recommended memory.
+2. Always Free is not an uptime guarantee. OCI can reclaim an idle VM when, over seven days, CPU p95 and network utilization are below 20% (and memory utilization is also below 20% for A1). A quiet order-notification workflow may not generate enough activity to avoid this policy. Capacity can also be unavailable in the selected region. Use a paid VPS if uninterrupted production availability is essential, and monitor OCI billing/usage.
+3. Create a free DuckDNS subdomain and point its A record to the VPS public IPv4 address. Leave AAAA unset unless IPv6 is configured end to end. Keep the record DNS-only. DuckDNS account credentials/tokens are not part of this deployment and must never be committed.
+4. In the OCI network security list or NSG and the VM firewall, allow TCP 22 only from trusted source IPs, TCP 80 and 443 from the internet, and optionally UDP 443 for HTTP/3. Caddy needs public DNS resolution and inbound TCP 80/443 for automatic certificate issuance and renewal.
+5. Install Docker Engine and the Docker Compose plugin on the VPS.
 
 ## 2. Generate local secrets and deploy
 
@@ -28,7 +30,7 @@ The script sends only the Compose/Caddy/bootstrap files and a temporary, filtere
 
 Open `https://<N8N_DOMAIN>` and create the n8n owner account. Use a unique password, enable MFA if available, and do not expose the owner credentials. Caddy obtains and renews the HTTPS certificate automatically.
 
-The Compose file pins n8n to the same version as the currently tested local installation. Upgrade deliberately: back up PostgreSQL and the encryption key first, review n8n release notes, then change the image tag and redeploy.
+The Compose file pins n8n to the same version as the currently tested local installation. Upgrade deliberately: back up PostgreSQL and the encryption key first, review n8n release notes, then change the image tag and redeploy. Task runners are built in for n8n 2.x; the old `N8N_RUNNERS_ENABLED` toggle is intentionally omitted.
 
 ## 3. Import the WhatsApp workflow and recreate credentials
 
