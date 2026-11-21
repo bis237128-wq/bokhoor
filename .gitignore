@@ -1,0 +1,7 @@
+.env
+.env.*
+!.env.example
+/deploy/n8n/.env
+/deploy/n8n/.env.*
+!/deploy/n8n/.env.example
+/deploy/n8n/backups/
