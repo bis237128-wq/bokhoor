@@ -57,8 +57,15 @@ foreach ($path in $paths) {
 function Invoke-GitCapture {
     param([Parameter(Mandatory = $true)][string[]]$Arguments)
 
-    $output = & $GitExePath '-c' "safe.directory=$safeRepoRoot" '-C' $repoRoot @Arguments 2>&1
-    $exitCode = $LASTEXITCODE
+    $previousPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'SilentlyContinue'
+        $output = & $GitExePath '-c' "safe.directory=$safeRepoRoot" '-C' $repoRoot @Arguments 2>&1
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousPreference
+    }
     if ($exitCode -ne 0) {
         $command = $Arguments[0]
         throw "Git command '$command' failed with exit code $exitCode. Output was suppressed."
@@ -98,14 +105,25 @@ try {
     $null = Invoke-GitCapture -Arguments (@('add', '--') + $paths)
     $null = Invoke-GitCapture -Arguments (@('diff', '--cached', '--check', '--') + $paths)
     $stagedNames = Invoke-GitCapture -Arguments (@('diff', '--cached', '--name-only', '--') + $paths)
+    $stagedNames = @($stagedNames | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) })
     foreach ($stagedName in $stagedNames) {
         if ($paths -notcontains ([string]$stagedName).Trim()) {
             throw 'Unexpected staged path detected; no commit was created.'
         }
     }
 
-    $message = "Add secure always-on n8n deployment`n`nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-    $null = Invoke-GitCapture -Arguments (@('commit', '--only', '-m', $message, '--') + $paths)
+    if ($stagedNames.Count -gt 0) {
+        $message = "Add secure always-on n8n deployment`n`nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+        $null = Invoke-GitCapture -Arguments (@('commit', '--only', '-m', $message, '--') + $paths)
+    }
+    else {
+        $committedNames = Invoke-GitCapture -Arguments (@('ls-tree', '-r', '--name-only', 'HEAD', '--') + $paths)
+        $committedNames = @($committedNames | Where-Object { ![string]::IsNullOrWhiteSpace([string]$_) })
+        if ($committedNames.Count -ne $paths.Count) {
+            throw 'No deployment changes are pending and the current commit does not contain every deployment file.'
+        }
+    }
+
     $commitLines = Invoke-GitCapture -Arguments @('rev-parse', '--short', 'HEAD')
     $commit = [string]($commitLines | Select-Object -First 1)
     $null = Invoke-GitCapture -Arguments @('push', 'origin', $branch)
