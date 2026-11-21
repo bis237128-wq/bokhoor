@@ -867,19 +867,25 @@
                 });
 
                 // خصم المخزون من قاعدة البيانات
-                const { data: stockDeducted, error: stockError } = await supabaseClient.rpc('deduct_stock_for_order', {
-                    p_order_number: orderNumber
-                });
-                if (stockError || stockDeducted !== true) {
-                    console.error('Order was saved but stock deduction failed or was rate-limited:', stockError);
-                } else {
-                    for (const item of orderedItemsList) {
-                        const product = products.find(p => p.id == item.productId);
-                        if (product) {
-                            product.stock_quantity = Math.max(0, item.currentStock - item.orderedQty);
+                try {
+                    const { data: stockDeducted, error: stockError } = await supabaseClient.rpc('deduct_stock_for_order', {
+                        p_order_number: orderNumber
+                    });
+                    if (stockError || stockDeducted !== true) {
+                        console.error('Order was saved but stock deduction failed or was rate-limited:', stockError);
+                    } else {
+                        for (const item of orderedItemsList) {
+                            const product = products.find(p => p.id == item.productId);
+                            if (product) {
+                                product.stock_quantity = Math.max(0, item.currentStock - item.orderedQty);
+                            }
                         }
                     }
+                } catch (stockError) {
+                    console.error('Order was saved but stock deduction request failed:', stockError);
+                }
 
+                try {
                     const { error: notificationError } = await supabaseClient.functions.invoke(
                         ORDER_NOTIFICATION_FUNCTION,
                         { body: { order_number: orderNumber } }
@@ -887,6 +893,8 @@
                     if (notificationError) {
                         console.error('Order was saved but notification dispatch failed:', notificationError);
                     }
+                } catch (notificationError) {
+                    console.error('Order was saved but notification dispatch request failed:', notificationError);
                 }
 
                 let text = `✨ *طلب جديد من متجر بخور الشيخ* ✨\n\n` +
