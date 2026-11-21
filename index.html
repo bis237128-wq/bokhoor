@@ -834,7 +834,27 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري إرسال وحفظ الطلب...';
 
+            const text = `✨ *طلب جديد من متجر بخور الشيخ* ✨\n\n` +
+                         `🔖 رقم الطلب: ${orderNumber}\n` +
+                         `👤 الاسم: ${name}\n` +
+                         `📱 الهاتف: ${phone}\n` +
+                         `📍 العنوان: ${address}\n\n` +
+                         `الطلبات:\n${cartDetailsSummary}\n` +
+                         `📦 إجمالي القطع المطلوبة: ${totalItems}\n` +
+                         `💰 الإجمالي الكلي: ${total} جنيه مصري`;
+            const whatsappNumber = '201278771472';
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
+            let whatsappWindow = null;
+            let whatsappWindowNavigated = false;
+
             try {
+                try {
+                    whatsappWindow = window.open('about:blank', '_blank');
+                    if (whatsappWindow) whatsappWindow.opener = null;
+                } catch (popupError) {
+                    console.warn('Could not reserve a WhatsApp tab; using the same-tab fallback.', popupError);
+                }
+
                 // حفظ الطلب في Supabase أولاً، ثم إرسال إشعار n8n بشكل غير معطّل.
                 const { error } = await supabaseClient
                     .from('orders')
@@ -852,6 +872,7 @@
                     ]);
 
                 if (error) {
+                    if (whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
                     console.error('خطأ أثناء حفظ الطلب:', error);
                     alert('حدث خطأ أثناء حفظ الطلب سحابياً، برجاء المحاولة مرة أخرى.');
                     submitBtn.disabled = false;
@@ -865,6 +886,15 @@
                     total: total,
                     item_count: totalItems
                 });
+
+                if (whatsappWindow && !whatsappWindow.closed) {
+                    try {
+                        whatsappWindow.location.replace(whatsappUrl);
+                        whatsappWindowNavigated = true;
+                    } catch (popupError) {
+                        console.error('Could not navigate the reserved WhatsApp tab:', popupError);
+                    }
+                }
 
                 // خصم المخزون من قاعدة البيانات
                 try {
@@ -897,20 +927,16 @@
                     console.error('Order was saved but notification dispatch request failed:', notificationError);
                 }
 
-                let text = `✨ *طلب جديد من متجر بخور الشيخ* ✨\n\n` +
-                           `🔖 رقم الطلب: ${orderNumber}\n` +
-                           `👤 الاسم: ${name}\n` +
-                           `📱 الهاتف: ${phone}\n` +
-                           `📍 العنوان: ${address}\n\n` +
-                           `الطلبات:\n${cartDetailsSummary}\n` +
-                           `📦 إجمالي القطع المطلوبة: ${totalItems}\n` +
-                           `💰 الإجمالي الكلي: ${total} جنيه مصري`;
-
-                let whatsappNumber = '201278771472';
-                window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`, '_blank');
+                if (!whatsappWindowNavigated) {
+                    if (whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
+                    window.location.assign(whatsappUrl);
+                }
 
             } catch (err) {
-                console.log(err);
+                if (whatsappWindow && !whatsappWindowNavigated && !whatsappWindow.closed) {
+                    whatsappWindow.close();
+                }
+                console.error('Order submission failed:', err);
             } finally {
                 setTimeout(() => {
                     submitBtn.disabled = false;
