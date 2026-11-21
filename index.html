@@ -248,12 +248,17 @@
             <i class="fa-solid fa-xmark close-btn" onclick="closeAdminModal()"></i>
             
             <div id="adminLoginForm">
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label for="adminEmail">Email</label>
+                    <input type="email" id="adminEmail" autocomplete="username" required>
+                </div>
                 <h3 style="color:var(--primary-gold); margin-bottom:15px; text-align:center;">دخول لوحة تحكم المالك</h3>
                 <div class="form-group" style="margin-bottom:20px;">
                     <label>كلمة المرور</label>
                     <input type="password" id="adminPass" placeholder="أدخل كلمة المرور">
                 </div>
                 <button class="submit-btn" style="background:var(--primary-gold); color:#000;" onclick="adminLogin()">دخول</button>
+                <p id="adminAuthError" role="alert" style="color:var(--danger-red); margin-bottom:12px;"></p>
             </div>
 
             <div id="adminControls" style="display:none;">
@@ -324,9 +329,7 @@
     <script>
         const SUPABASE_URL = "https://zhppvfabbjffmjgsiaza.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_k6SigiKq0iAPzvxPwyW8LQ_4bdqEVEq";
-        const N8N_WEBHOOK_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
-            ? 'http://localhost:5678/webhook/bakhoor-order'
-            : 'https://graphs-brand-globe-important.trycloudflare.com/webhook/bakhoor-order';
+        const ORDER_NOTIFICATION_FUNCTION = 'notify-order';
         
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -472,9 +475,6 @@
                 if (!prodErr && prodData && prodData.length > 0) {
                     products = prodData;
                 } else {
-                    for (let p of defaultProducts) {
-                        await supabaseClient.from('products').upsert(p);
-                    }
                     products = [...defaultProducts];
                 }
 
@@ -840,10 +840,12 @@
                     .from('orders')
                     .insert([
                         { 
+                            order_number: orderNumber,
                             customer_name: name, 
                             customer_phone: phone, 
                             customer_address: address, 
                             total_amount: total,
+                            items: webhookItems,
                             order_details: orderDetails,
                             total_items_count: totalItems
                         }
@@ -864,65 +866,27 @@
                     item_count: totalItems
                 });
 
-                const n8nOrderPayload = {
-                    event: 'order.created',
-                    order_number: orderNumber,
-                    customer_name: name,
-                    customer_phone: phone,
-                    customer_address: address,
-                    products: webhookItems,
-                    items: webhookItems,
-                    total: total,
-                    total_price: total,
-                    total_items_count: totalItems,
-                    order_details: orderDetails
-                };
-
-                const sendN8nWebhook = async () => {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 12000);
-                    try {
-                        console.log('Dispatching order to n8n:', {
-                            order_number: n8nOrderPayload.order_number,
-                            items: n8nOrderPayload.items.length,
-                            total: n8nOrderPayload.total_price
-                        });
-                        const response = await fetch(N8N_WEBHOOK_URL, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-                            body: JSON.stringify(n8nOrderPayload),
-                            signal: controller.signal,
-                            keepalive: true
-                        });
-
-                        if (response.type === 'opaque') {
-                            console.log('n8n order webhook POST dispatched; browser hides cross-origin response.');
-                        } else if (response.ok) {
-                            console.log('n8n order webhook succeeded:', response.status);
-                        } else {
-                            console.error('n8n order webhook returned an error:', response.status, response.statusText);
-                        }
-                    } catch (webhookError) {
-                        console.error('n8n webhook failed after the Supabase order was saved:', webhookError);
-                    } finally {
-                        clearTimeout(timeoutId);
-                    }
-                };
-
-                // Do not wait for n8n: an offline automation cannot block checkout.
-                void sendN8nWebhook();
-
                 // خصم المخزون من قاعدة البيانات
-                for (let item of orderedItemsList) {
-                    let updatedStock = Math.max(0, item.currentStock - item.orderedQty);
-                    let pObj = products.find(p => p.id == item.productId);
-                    if(pObj) pObj.stock_quantity = updatedStock;
+                const { data: stockDeducted, error: stockError } = await supabaseClient.rpc('deduct_stock_for_order', {
+                    p_order_number: orderNumber
+                });
+                if (stockError || stockDeducted !== true) {
+                    console.error('Order was saved but stock deduction failed or was rate-limited:', stockError);
+                } else {
+                    for (const item of orderedItemsList) {
+                        const product = products.find(p => p.id == item.productId);
+                        if (product) {
+                            product.stock_quantity = Math.max(0, item.currentStock - item.orderedQty);
+                        }
+                    }
 
-                    await supabaseClient
-                        .from('products')
-                        .update({ stock_quantity: updatedStock })
-                        .eq('id', item.productId);
+                    const { error: notificationError } = await supabaseClient.functions.invoke(
+                        ORDER_NOTIFICATION_FUNCTION,
+                        { body: { order_number: orderNumber } }
+                    );
+                    if (notificationError) {
+                        console.error('Order was saved but notification dispatch failed:', notificationError);
+                    }
                 }
 
                 let text = `✨ *طلب جديد من متجر بخور الشيخ* ✨\n\n` +
@@ -947,11 +911,9 @@
             }
         }
 
-        function openAdminModal() { 
-            document.getElementById('adminModal').style.display = 'flex'; 
-            renderAdminLists(); 
-            fetchUniqueVisitorsCount();
-            fetchShareStats();
+        function openAdminModal() {
+            document.getElementById('adminModal').style.display = 'flex';
+            void updateAdminAccess();
         }
 
         function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; resetProductForm(); }
@@ -965,23 +927,50 @@
             document.getElementById('imageModal').style.display = 'none';
         }
 
-        function adminLogin() {
-            const p = document.getElementById('adminPass').value;
-            if(p === '1234') {
+        async function updateAdminAccess() {
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (error) {
+                document.getElementById('adminAuthError').innerText = 'تعذر التحقق من الجلسة. حاول مرة أخرى.';
+                return;
+            }
+
+            const isAdmin = data.session?.user.app_metadata?.store_admin === true;
+            document.getElementById('adminLoginForm').style.display = isAdmin ? 'none' : 'block';
+            document.getElementById('adminControls').style.display = isAdmin ? 'block' : 'none';
+            if (isAdmin) {
+                fetchUniqueVisitorsCount();
+                fetchShareStats();
+                renderAdminLists();
+            }
+        }
+
+        async function adminLogin() {
+            const email = document.getElementById('adminEmail').value.trim();
+            const password = document.getElementById('adminPass').value;
+            const errorElement = document.getElementById('adminAuthError');
+            errorElement.innerText = '';
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (!error && data?.user?.app_metadata?.store_admin === true) {
                 document.getElementById('adminLoginForm').style.display = 'none';
                 document.getElementById('adminControls').style.display = 'block';
                 fetchUniqueVisitorsCount();
                 fetchShareStats();
                 renderAdminLists();
-            } else { 
+            } else {
+                await supabaseClient.auth.signOut();
+                errorElement.innerText = 'بيانات الدخول غير صحيحة أو لا تملك صلاحية الإدارة.';
                 alert('كلمة المرور غير صحيحة!'); 
             }
         }
 
-        function adminLogout() {
+        async function adminLogout() {
+            const { error } = await supabaseClient.auth.signOut();
+            if (error) console.error('Admin sign-out failed:', error);
             document.getElementById('adminLoginForm').style.display = 'block';
             document.getElementById('adminControls').style.display = 'none';
+            document.getElementById('adminEmail').value = '';
             document.getElementById('adminPass').value = '';
+            document.getElementById('adminAuthError').innerText = '';
             resetProductForm();
             closeAdminModal();
         }

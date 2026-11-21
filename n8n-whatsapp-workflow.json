@@ -1,0 +1,171 @@
+{
+  "name": "Bakhoor Store WhatsApp Order Confirmation",
+  "id": "1aUqT9BQvGLCRLDp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bakhoor-order",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "4a3d7dd4-2e39-4877-a4ec-311aa9bc9d30",
+      "name": "Order Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "cdcf3f72-2895-4f32-8ced-7d8f4ce49e47",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8a59e9e9-4d80-4d32-85b9-a9ec43a0192e",
+          "name": "Bakhoor Edge Function Authorization"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const input = $input.first().json;\nconst data = input.body ?? input;\nif (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Order body must be an object');\nconst orderNumber = String(data.order_number ?? '').trim();\nif (!/^BKH-\\d{10,}-[A-Z0-9]{5}$/.test(orderNumber)) throw new Error('Invalid order reference');\nconst createdAt = Date.parse(data.created_at);\nif (!Number.isFinite(createdAt) || Date.now() - createdAt > 15 * 60 * 1000 || createdAt > Date.now() + 60_000) throw new Error('Order is outside the notification window');\nconst name = String(data.customer_name ?? '').trim();\nif (!name || name.length > 100) throw new Error('Customer name is required and must be at most 100 characters');\nconst digits = String(data.customer_phone ?? '').replace(/\\D/g, '');\nlet phone = digits;\nif (phone.startsWith('0020')) phone = phone.slice(2);\nif (phone.startsWith('0')) phone = '20' + phone.slice(1);\nif (phone.length === 10 && phone.startsWith('1')) phone = '20' + phone;\nif (!/^201[0125]\\d{8}$/.test(phone)) throw new Error('Customer phone must be a valid Egyptian mobile number');\nif (!Array.isArray(data.items) || data.items.length === 0 || data.items.length > 50) throw new Error('Order items are invalid');\nconst message = 'مرحباً ' + name + '، تم استلام طلبك من متجر بخور الشيخ بنجاح.\\nشكراً لثقتك بنا';\nreturn [{ json: { to: phone, message, orderNumber } }];"
+      },
+      "id": "d214e9bb-3a78-493d-b905-22bfc8295229",
+      "name": "Format Customer Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 10,
+        "unit": "seconds",
+        "options": {}
+      },
+      "id": "9a371c6e-0871-4a0b-9f11-3523dbe9e6de",
+      "name": "Wait 10 Seconds",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ultramsg.com/instance195765/messages/chat",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{$json.to}}"
+            },
+            {
+              "name": "body",
+              "value": "={{$json.message}}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "5e8a56a9-f332-472d-b1ab-81728a2aec26",
+          "name": "UltraMsg API Token"
+        }
+      },
+      "id": "a7f3b48b-cccb-4eec-b18f-2e548f6f8368",
+      "name": "Send WhatsApp via UltraMsg",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1020,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"accepted\":true}",
+        "options": {
+          "responseCode": 202
+        }
+      },
+      "id": "7eb4ea24-35a6-4625-9766-ef39fb210bcc",
+      "name": "Confirm Accepted Notification",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1280,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Order Webhook": {
+      "main": [
+        [
+          {
+            "node": "Format Customer Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Customer Message": {
+      "main": [
+        [
+          {
+            "node": "Wait 10 Seconds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 10 Seconds": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp via UltraMsg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp via UltraMsg": {
+      "main": [
+        [
+          {
+            "node": "Confirm Accepted Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d457220e-f05e-4fc5-a414-bc4889f5ad79",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
